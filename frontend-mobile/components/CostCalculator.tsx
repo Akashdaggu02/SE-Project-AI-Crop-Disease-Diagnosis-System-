@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Calculator, TrendingUp, TrendingDown } from 'lucide-react-native';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Pesticide {
     name: string;
@@ -16,6 +17,7 @@ interface CostCalculatorProps {
 const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionCostPerAcre = 500 }) => {
     const [landArea, setLandArea] = useState('1');
     const [unit, setUnit] = useState<'acres' | 'hectares'>('acres');
+    const { t } = useLanguage();
 
     const parseArea = () => {
         const area = parseFloat(landArea) || 0;
@@ -53,11 +55,11 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
         <View style={styles.container}>
             <View style={styles.header}>
                 <Calculator size={24} color="#4caf50" />
-                <Text style={styles.title}>Cost Estimation</Text>
+                <Text style={styles.title}>{t('costEstimation')}</Text>
             </View>
 
             <View style={styles.inputSection}>
-                <Text style={styles.label}>Land Area:</Text>
+                <Text style={styles.label}>{t('landArea')}:</Text>
                 <View style={styles.inputRow}>
                     <TextInput
                         style={styles.input}
@@ -87,7 +89,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                 <View style={[styles.costCard, { backgroundColor: '#ffebee' }]}>
                     <TrendingUp size={20} color="#d32f2f" />
                     <View style={styles.costInfo}>
-                        <Text style={styles.costLabel}>Treatment Cost</Text>
+                        <Text style={styles.costLabel}>{t('treatmentCost')}</Text>
                         <Text style={[styles.costValue, { color: '#d32f2f' }]}>₹{costs.treatment.toFixed(0)}</Text>
                     </View>
                 </View>
@@ -95,7 +97,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                 <View style={[styles.costCard, { backgroundColor: '#e8f5e9' }]}>
                     <TrendingDown size={20} color="#2e7d32" />
                     <View style={styles.costInfo}>
-                        <Text style={styles.costLabel}>Prevention Cost</Text>
+                        <Text style={styles.costLabel}>{t('preventionCost')}</Text>
                         <Text style={[styles.costValue, { color: '#2e7d32' }]}>₹{costs.prevention.toFixed(0)}</Text>
                     </View>
                 </View>
@@ -103,7 +105,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                 {costs.savings > 0 && (
                     <View style={styles.savingsCard}>
                         <Text style={styles.savingsText}>
-                            💰 You could save ₹{costs.savings.toFixed(0)} with preventive measures!
+                            💰 {t('savingsMessage')} ₹{costs.savings.toFixed(0)}!
                         </Text>
                     </View>
                 )}

@@ -14,7 +14,10 @@ const { width } = Dimensions.get('window');
 
 const CROP_OPTIONS = [
   { id: 'tomato', name: 'Tomato', image: require('../../assets/images/tomato.png') },
-  { id: 'cotton', name: 'Cotton', image: require('../../assets/images/cotton.png') },
+  { id: 'potato', name: 'Potato', image: require('../../assets/images/potato.png') },
+  { id: 'maize', name: 'Maize', image: require('../../assets/images/maize.png') },
+  { id: 'grape', name: 'Grape', image: require('../../assets/images/grape.png') },
+  { id: 'rice', name: 'Rice', image: require('../../assets/images/rice.png') },
 ];
 
 export default function DashboardScreen() {

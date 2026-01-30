@@ -86,7 +86,7 @@ def api_info():
                 'GET /api/chatbot/history': 'Get chat history'
             }
         },
-        'supported_crops': ['tomato', 'rice', 'wheat', 'cotton'],
+        'supported_crops': ['grape', 'maize', 'potato', 'rice', 'tomato'],
         'supported_languages': ['en', 'hi', 'te', 'ta', 'kn', 'mr']
     }), 200
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print(f"Server starting on http://{settings.HOST}:{settings.PORT}")
     print(f"Debug mode: {settings.DEBUG}")
-    print(f"Supported crops: tomato, rice, wheat, cotton")
+    print(f"Supported crops: grape, maize, potato, rice, tomato")
     print(f"Supported languages: en, hi, te, ta, kn, mr")
     print("=" * 60)
     

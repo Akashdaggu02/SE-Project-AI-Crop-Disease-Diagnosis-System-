@@ -64,42 +64,6 @@ AI-Crop-Diagnosis/
 │
 ├── dataset/
 │   └── (10,972 files - training/testing images)
-│
-├── frontend/
-│   ├── mobile/
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   │   ├── ConfidenceBar.js
-│   │   │   │   ├── DiseaseStageBadge.js
-│   │   │   │   ├── ImagePicker.js
-│   │   │   │   ├── PredictionCard.js
-│   │   │   │   └── VoicePlayer.js
-│   │   │   │
-│   │   │   ├── navigation/
-│   │   │   │   └── AppNavigator.js
-│   │   │   │
-│   │   │   ├── screens/
-│   │   │   │   ├── ChatbotScreen.js
-│   │   │   │   ├── CostScreen.js
-│   │   │   │   ├── HistoryScreen.js
-│   │   │   │   ├── HomeScreen.js
-│   │   │   │   └── ResultScreen.js
-│   │   │   │
-│   │   │   ├── services/
-│   │   │   │   ├── api.js
-│   │   │   │   ├── translateService.js
-│   │   │   │   └── voiceService.js
-│   │   │   │
-│   │   │   └── utils/
-│   │   │       ├── constants.js
-│   │   │       └── helpers.js
-│   │   │
-│   │   ├── assets/
-│   │   ├── App.js
-│   │   └── package.json
-│   │
-│   └── web/
-│
 ├── frontend-mobile/
 │   ├── .expo/
 │   ├── .git/

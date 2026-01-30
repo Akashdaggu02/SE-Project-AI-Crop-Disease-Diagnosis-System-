@@ -3,28 +3,48 @@ from severity_estimator import estimate_severity
 from stage_classifier import classify_stage
 
 MODEL_MAP = {
-    "tomato": "../models/tomato_disease_model.h5",
+    "grape": "../models/grape_disease_model.h5",
+    "maize": "../models/maize_disease_model.h5",
+    "potato": "../models/potato_disease_model.h5",
     "rice": "../models/rice_disease_model.h5",
-    "wheat": "../models/wheat_disease_model.h5",
-    "cotton": "../models/cotton_disease_model.h5"
+    "tomato": "../models/tomato_disease_model.h5"
 }
 
 CLASS_NAMES = {
+    "grape": [
+        "Black Rot",
+        "ESCA",
+        "Healthy",
+        "Leaf Blight"
+    ],
+    "maize": [
+        "Blight",
+        "Common_Rust",
+        "Gray_Leaf_Spot",
+        "Healthy"
+    ],
+    "potato": [
+        "Early Blight",
+        "Late Blight",
+        "Healthy"
+    ],
+    "rice": [
+        "Bacterial leaf blight",
+        "Brown spot",
+        "Leaf smut"
+    ],
     "tomato": [
         "Healthy",
-        "Tomato___Bacterial_spot",
-        "Tomato___Early_blight",
-        "Tomato___Late_blight",
-        "Tomato___Leaf_Mold",
-        "Tomato___Septoria_leaf_spot",
-        "Tomato___Spider_mites Two-spotted_spider_mite",
-        "Tomato___Target_Spot",
-        "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
-        "Tomato___Tomato_mosaic_virus"
-    ],
-    "rice": ["Healthy", "BrownSpot", "Hispa", "LeafBlast"],
-    "wheat": ["Healthy", "Brown rust", "Yellow rust", "Loose Smut"],
-    "cotton": ["Healthy", "Bacterial Blight", "Curl Virus", "Leaf Hopper Jassids"]
+        "Bacterial spot",
+        "Early blight",
+        "Late blight",
+        "Leaf Mold",
+        "Septoria leaf spot",
+        "Spider mites Two-spotted spider mite",
+        "Target Spot",
+        "Tomato Yellow Leaf Curl Virus",
+        "Tomato mosaic virus"
+    ]
 }
 
 def full_prediction(image_path, crop):

@@ -3,8 +3,8 @@ from typing import Optional, Dict
 import json
 import os
 
-# Initialize translator
-translator = Translator()
+# Initialize translator with specific service URL to avoid some blocking issues
+translator = Translator(service_urls=['translate.google.com'])
 
 # Cache for translations to reduce API calls
 translation_cache = {}
@@ -61,6 +61,28 @@ def translate_text(text: str, target_language: str = 'en', source_language: str 
         print(f"Translation error: {e}")
         # Return original text if translation fails
         return text
+
+# ... (Previous code remains) ...
+
+def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
+    """
+    Get all UI labels translated to target language.
+    Only returns labels that were successfully translated (different from source).
+    """
+    if target_language == 'en':
+        return UI_LABELS_ENGLISH
+        
+    translated_labels = {}
+    for key, text in UI_LABELS_ENGLISH.items():
+        # Use cache or google translate
+        translated = translate_text(text, target_language)
+        
+        # Only include if translation is different from English (or we are actually translating to something else)
+        # This prevents English fallbacks from overriding valid static translations in the frontend
+        if translated != text:
+             translated_labels[key] = translated
+        
+    return translated_labels
 
 def translate_diagnosis_result(result: Dict, target_language: str) -> Dict:
     """
@@ -196,6 +218,65 @@ def get_ui_text(key: str, language: str = 'en') -> str:
     
     # Return key if not found
     return key
+
+# Define standard UI labels for dynamic translation
+UI_LABELS_ENGLISH = {
+    "confidence_score": "Confidence Score",
+    "severity": "Severity",
+    "diagnosis_id": "Diagnosis ID",
+    "healthy_crop": "Healthy Crop Detected",
+    "potential_disease": "Potential Disease Detected",
+    "voice_explanation": "Voice Explanation",
+    "pause_explanation": "Pause Explanation",
+    "share_report": "Share Report",
+    "weather_advice": "Weather-Based Advice",
+    "disease_info": "Disease Information",
+    "symptoms": "Symptoms",
+    "treatment_plan": "Treatment Plan",
+    "urgency": "URGENCY",
+    "recommended_pesticides": "Recommended Pesticides",
+    "dosage": "Dosage",
+    "frequency": "Frequency",
+    "est_price": "Est. Price",
+    "organic": "Organic",
+    "chemical": "Chemical",
+    "cost_estimation": "Cost Estimation",
+    "land_area": "Land Area",
+    "treatment_cost": "Treatment Cost",
+    "prevention_cost": "Prevention Cost",
+    "savings_message": "You could save",
+    "prevention_best_practices": "Prevention & Best Practices",
+    "organic_alternatives": "Organic Alternatives",
+    "finish_diagnosis": "Finish Diagnosis",
+    "crop_tomato": "Tomato",
+    "crop_grape": "Grape",
+    "crop_maize": "Maize",
+    "crop_potato": "Potato",
+    "crop_rice": "Rice",
+    "stage_early": "Early Stage",
+    "stage_moderate": "Moderate Stage",
+    "stage_severe": "Severe Stage"
+}
+
+def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
+    """
+    Get all UI labels translated to target language.
+    Only returns labels that were successfully translated (different from source).
+    """
+    if target_language == 'en':
+        return UI_LABELS_ENGLISH
+        
+    translated_labels = {}
+    for key, text in UI_LABELS_ENGLISH.items():
+        # Use cache or google translate
+        translated = translate_text(text, target_language)
+        
+        # Only include if translation is different from English (or we are actually translating to something else)
+        # This prevents English fallbacks from overriding valid static translations in the frontend
+        if translated != text:
+             translated_labels[key] = translated
+        
+    return translated_labels
 
 def get_supported_languages() -> Dict[str, str]:
     """Get list of supported languages"""

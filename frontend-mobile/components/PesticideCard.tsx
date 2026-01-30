@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ShieldCheck, ShieldAlert, BadgeInfo } from 'lucide-react-native';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Pesticide {
     name: string;
@@ -12,6 +13,8 @@ interface Pesticide {
 }
 
 const PesticideCard: React.FC<{ pesticide: Pesticide }> = ({ pesticide }) => {
+    const { t } = useLanguage();
+
     return (
         <View style={styles.card}>
             <View style={styles.header}>
@@ -19,28 +22,28 @@ const PesticideCard: React.FC<{ pesticide: Pesticide }> = ({ pesticide }) => {
                 {pesticide.is_organic ? (
                     <View style={styles.organicBadge}>
                         <ShieldCheck size={14} color="#fff" />
-                        <Text style={styles.organicText}>Organic</Text>
+                        <Text style={styles.organicText}>{t('organic')}</Text>
                     </View>
                 ) : (
                     <View style={[styles.organicBadge, { backgroundColor: '#ff9800' }]}>
                         <ShieldAlert size={14} color="#fff" />
-                        <Text style={styles.organicText}>Chemical</Text>
+                        <Text style={styles.organicText}>{t('chemical')}</Text>
                     </View>
                 )}
             </View>
 
             <View style={styles.infoRow}>
-                <Text style={styles.label}>Dosage:</Text>
+                <Text style={styles.label}>{t('dosage')}:</Text>
                 <Text style={styles.value}>{pesticide.dosage_per_acre}</Text>
             </View>
 
             <View style={styles.infoRow}>
-                <Text style={styles.label}>Frequency:</Text>
+                <Text style={styles.label}>{t('frequency')}:</Text>
                 <Text style={styles.value}>{pesticide.frequency}</Text>
             </View>
 
             <View style={styles.infoRow}>
-                <Text style={styles.label}>Est. Price:</Text>
+                <Text style={styles.label}>{t('estPrice')}:</Text>
                 <Text style={styles.value}>₹{pesticide.cost_per_liter} / L</Text>
             </View>
 

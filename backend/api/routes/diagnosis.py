@@ -11,7 +11,7 @@ from config.settings import settings
 from utils.image_quality_check import check_image_quality
 from utils.preprocess import preprocess_image
 from utils.validators import validate_diagnosis_request
-from services.language_service import translate_diagnosis_result, translate_disease_info
+from services.language_service import translate_diagnosis_result, translate_disease_info, translate_pesticide_info, translate_text, get_translated_ui_labels
 from services.voice_service import generate_diagnosis_voice
 from services.pesticide_service import get_severity_based_recommendations
 from services.cost_service import calculate_total_cost
@@ -70,9 +70,9 @@ def detect_disease():
         # Get crop type
         crop = request.form.get('crop', '').lower()
         print(f"DEBUG: Crop value: '{crop}'")
-        if not crop or crop not in ['tomato', 'rice', 'wheat', 'cotton']:
+        if not crop or crop not in ['grape', 'maize', 'potato', 'rice', 'tomato']:
             print(f"DEBUG: Invalid crop: '{crop}'")
-            return jsonify({'error': 'Valid crop type required (tomato, rice, wheat, cotton)'}), 400
+            return jsonify({'error': 'Valid crop type required (tomato, cotton)'}), 400
         
         # Get optional parameters
         latitude = request.form.get('latitude', type=float)
@@ -86,23 +86,19 @@ def detect_disease():
         filepath = os.path.join(settings.UPLOAD_FOLDER, filename)
         file.save(filepath)
         
-        # Check image quality
+        # Check image quality (for warning only, don't reject)
         print(f"DEBUG: Checking image quality for: {filename}")
         quality_result = check_image_quality(filepath)
         print(f"DEBUG: Quality result: {quality_result}")
         
+        # Store quality warning if image quality is low (but don't reject)
+        quality_warning = None
         if not quality_result['is_valid']:
-            print(f"DEBUG: Image rejected - {quality_result.get('reason')}")
-            os.remove(filepath)  # Delete poor quality image
-            return jsonify({
-                'error': 'Image quality too low',
-                'reason': quality_result.get('reason'),
-                'quality_score': quality_result.get('quality_score'),
-                'blur_score': quality_result.get('blur_score'),
-                'brightness_score': quality_result.get('brightness_score')
-            }), 400
+            quality_warning = quality_result.get('reason')
+            print(f"DEBUG: Image quality warning - {quality_warning}")
+        else:
+            print(f"DEBUG: Image quality check passed!")
         
-        print(f"DEBUG: Image quality check passed!")
         
         # Perform disease detection
         print(f"DEBUG: Starting disease prediction for crop: {crop}")
@@ -110,74 +106,111 @@ def detect_disease():
         print(f"DEBUG: Prediction result: {prediction_result}")
         
         # Get disease information from database
-        disease_info = db.execute_query(
-            'SELECT * FROM diseases WHERE crop = ? AND disease_name = ?',
-            (crop, prediction_result['disease'])
-        )
-        
         disease_data = {}
-        if disease_info:
-            disease_data = {
-                'description': disease_info[0]['description'],
-                'symptoms': disease_info[0]['symptoms'],
-                'prevention_steps': disease_info[0]['prevention_steps']
-            }
-            # Translate disease info
-            disease_data = translate_disease_info(disease_data, language)
+        try:
+            disease_info = db.execute_query(
+                'SELECT * FROM diseases WHERE crop = ? AND disease_name = ?',
+                (crop, prediction_result['disease'])
+            )
+            
+            if disease_info:
+                disease_data = {
+                    'description': disease_info[0]['description'],
+                    'symptoms': disease_info[0]['symptoms'],
+                    'prevention_steps': disease_info[0]['prevention_steps']
+                }
+                # Translate disease info
+                disease_data = translate_disease_info(disease_data, language)
+        except Exception as e:
+            print(f"DEBUG: Error getting disease info: {e}")
+            disease_data = {}
         
         # Get pesticide recommendations
-        pesticide_recommendations = get_severity_based_recommendations(
-            prediction_result['disease'],
-            prediction_result['severity_percent'],
-            crop
-        )
+        pesticide_recommendations = {}
+        try:
+            pesticide_recommendations = get_severity_based_recommendations(
+                prediction_result['disease'],
+                prediction_result['severity_percent'],
+                crop
+            )
+            
+            # Translate pesticide recommendations
+            if language != 'en' and pesticide_recommendations:
+                if 'treatment_approach' in pesticide_recommendations:
+                    pesticide_recommendations['treatment_approach'] = translate_text(
+                        pesticide_recommendations['treatment_approach'], language
+                    )
+                if 'application_note' in pesticide_recommendations:
+                    pesticide_recommendations['application_note'] = translate_text(
+                        pesticide_recommendations['application_note'], language
+                    )
+                
+                new_pests = []
+                for pest in pesticide_recommendations.get('recommended_pesticides', []):
+                    new_pests.append(translate_pesticide_info(pest, language))
+                pesticide_recommendations['recommended_pesticides'] = new_pests
+
+        except Exception as e:
+            print(f"DEBUG: Error getting pesticide recommendations: {e}")
+            pesticide_recommendations = {'recommended_pesticides': []}
         
         # Get weather-based advice if coordinates provided
         weather_advice = None
-        if latitude and longitude:
-            weather_data = get_weather_data(latitude, longitude)
-            if weather_data:
-                weather_advice = get_weather_based_advice(weather_data, prediction_result['disease'])
+        try:
+            if latitude and longitude:
+                weather_data = get_weather_data(latitude, longitude)
+                if weather_data:
+                    weather_advice = get_weather_based_advice(weather_data, prediction_result['disease'])
+        except Exception as e:
+            print(f"DEBUG: Error getting weather advice: {e}")
+            weather_advice = None
         
         # Save diagnosis to history (only if user is logged in)
         diagnosis_id = None
-        if user_id:
-            diagnosis_id = db.execute_insert(
-                '''INSERT INTO diagnosis_history 
-                   (user_id, crop, disease, confidence, severity_percent, stage, image_path, latitude, longitude)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (
-                    user_id,
-                    crop,
-                    prediction_result['disease'],
-                    prediction_result['confidence'],
-                    prediction_result['severity_percent'],
-                    prediction_result['stage'],
-                    filepath,
-                    latitude,
-                    longitude
-                )
-            )
-            
-            # Save pesticide recommendations (only if user is logged in)
-            for pesticide in pesticide_recommendations.get('recommended_pesticides', [])[:3]:
-                db.execute_insert(
-                    '''INSERT INTO pesticide_recommendations 
-                       (diagnosis_id, pesticide_name, dosage, frequency, cost_per_unit, is_organic, warnings)
-                       VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        try:
+            if user_id:
+                diagnosis_id = db.execute_insert(
+                    '''INSERT INTO diagnosis_history 
+                       (user_id, crop, disease, confidence, severity_percent, stage, image_path, latitude, longitude)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     (
-                        diagnosis_id,
-                        pesticide['name'],
-                        pesticide['dosage_per_acre'],
-                        pesticide['frequency'],
-                        pesticide['cost_per_liter'],
-                        pesticide['is_organic'],
-                        pesticide['warnings']
+                        user_id,
+                        crop,
+                        prediction_result['disease'],
+                        prediction_result['confidence'],
+                        prediction_result['severity_percent'],
+                        prediction_result['stage'],
+                        filepath,
+                        latitude,
+                        longitude
                     )
                 )
+                
+                # Save pesticide recommendations (only if user is logged in)
+                for pesticide in pesticide_recommendations.get('recommended_pesticides', [])[:3]:
+                    db.execute_insert(
+                        '''INSERT INTO pesticide_recommendations 
+                           (diagnosis_id, pesticide_name, dosage, frequency, cost_per_unit, is_organic, warnings)
+                           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                        (
+                            diagnosis_id,
+                            pesticide['name'],
+                            pesticide['dosage_per_acre'],
+                            pesticide['frequency'],
+                            pesticide['cost_per_liter'],
+                            pesticide['is_organic'],
+                            pesticide['warnings']
+                        )
+                    )
+        except Exception as e:
+            print(f"DEBUG: Error saving to history: {e}")
+            diagnosis_id = None
         
         # Translate result
         translated_result = translate_diagnosis_result(prediction_result, language)
+        
+        # Get UI translations
+        ui_labels = get_translated_ui_labels(language)
         
         # Generate voice output
         voice_file = generate_diagnosis_voice(translated_result, language)
@@ -191,7 +224,9 @@ def detect_disease():
             'weather_advice': weather_advice,
             'voice_file': f'/api/diagnosis/voice/{os.path.basename(voice_file)}' if voice_file else None,
             'image_quality': quality_result,
-            'language': language
+            'quality_warning': quality_warning,  # Warning message if quality is low
+            'language': language,
+            'ui_translations': ui_labels
         }
         
         return jsonify(response), 200
