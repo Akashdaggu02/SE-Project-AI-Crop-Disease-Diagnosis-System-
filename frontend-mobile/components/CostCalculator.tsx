@@ -1,0 +1,227 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Calculator, TrendingUp, TrendingDown } from 'lucide-react-native';
+
+interface Pesticide {
+    name: string;
+    dosage_per_acre: string;
+    cost_per_liter: number;
+}
+
+interface CostCalculatorProps {
+    pesticides: Pesticide[];
+    preventionCostPerAcre?: number;
+}
+
+const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionCostPerAcre = 500 }) => {
+    const [landArea, setLandArea] = useState('1');
+    const [unit, setUnit] = useState<'acres' | 'hectares'>('acres');
+
+    const parseArea = () => {
+        const area = parseFloat(landArea) || 0;
+        return unit === 'hectares' ? area * 2.47105 : area; // Convert hectares to acres
+    };
+
+    const calculateCosts = () => {
+        const areaInAcres = parseArea();
+        let totalTreatmentCost = 0;
+
+        pesticides.forEach(pesticide => {
+            // Parse dosage (e.g., "2-3 L/acre" -> take average 2.5)
+            const dosageMatch = pesticide.dosage_per_acre.match(/(\d+\.?\d*)-?(\d+\.?\d*)?/);
+            if (dosageMatch) {
+                const min = parseFloat(dosageMatch[1]);
+                const max = dosageMatch[2] ? parseFloat(dosageMatch[2]) : min;
+                const avgDosage = (min + max) / 2;
+                totalTreatmentCost += avgDosage * areaInAcres * pesticide.cost_per_liter;
+            }
+        });
+
+        const totalPreventionCost = preventionCostPerAcre * areaInAcres;
+        const savings = totalTreatmentCost - totalPreventionCost;
+
+        return {
+            treatment: totalTreatmentCost,
+            prevention: totalPreventionCost,
+            savings: savings > 0 ? savings : 0,
+        };
+    };
+
+    const costs = calculateCosts();
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Calculator size={24} color="#4caf50" />
+                <Text style={styles.title}>Cost Estimation</Text>
+            </View>
+
+            <View style={styles.inputSection}>
+                <Text style={styles.label}>Land Area:</Text>
+                <View style={styles.inputRow}>
+                    <TextInput
+                        style={styles.input}
+                        value={landArea}
+                        onChangeText={setLandArea}
+                        keyboardType="decimal-pad"
+                        placeholder="Enter area"
+                    />
+                    <View style={styles.unitSelector}>
+                        <TouchableOpacity
+                            style={[styles.unitButton, unit === 'acres' && styles.unitButtonActive]}
+                            onPress={() => setUnit('acres')}
+                        >
+                            <Text style={[styles.unitText, unit === 'acres' && styles.unitTextActive]}>Acres</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.unitButton, unit === 'hectares' && styles.unitButtonActive]}
+                            onPress={() => setUnit('hectares')}
+                        >
+                            <Text style={[styles.unitText, unit === 'hectares' && styles.unitTextActive]}>Hectares</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+
+            <View style={styles.resultsSection}>
+                <View style={[styles.costCard, { backgroundColor: '#ffebee' }]}>
+                    <TrendingUp size={20} color="#d32f2f" />
+                    <View style={styles.costInfo}>
+                        <Text style={styles.costLabel}>Treatment Cost</Text>
+                        <Text style={[styles.costValue, { color: '#d32f2f' }]}>₹{costs.treatment.toFixed(0)}</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.costCard, { backgroundColor: '#e8f5e9' }]}>
+                    <TrendingDown size={20} color="#2e7d32" />
+                    <View style={styles.costInfo}>
+                        <Text style={styles.costLabel}>Prevention Cost</Text>
+                        <Text style={[styles.costValue, { color: '#2e7d32' }]}>₹{costs.prevention.toFixed(0)}</Text>
+                    </View>
+                </View>
+
+                {costs.savings > 0 && (
+                    <View style={styles.savingsCard}>
+                        <Text style={styles.savingsText}>
+                            💰 You could save ₹{costs.savings.toFixed(0)} with preventive measures!
+                        </Text>
+                    </View>
+                )}
+            </View>
+
+            <Text style={styles.disclaimer}>
+                * Costs are estimates based on average market prices and recommended dosages.
+            </Text>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 12,
+        elevation: 2,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginLeft: 12,
+    },
+    inputSection: {
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 8,
+        fontWeight: '600',
+    },
+    inputRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    input: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 16,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    unitSelector: {
+        flexDirection: 'row',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 12,
+        padding: 4,
+    },
+    unitButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+    },
+    unitButtonActive: {
+        backgroundColor: '#4caf50',
+    },
+    unitText: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '600',
+    },
+    unitTextActive: {
+        color: '#fff',
+    },
+    resultsSection: {
+        gap: 12,
+    },
+    costCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+    },
+    costInfo: {
+        marginLeft: 12,
+        flex: 1,
+    },
+    costLabel: {
+        fontSize: 13,
+        color: '#666',
+        marginBottom: 4,
+    },
+    costValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+    },
+    savingsCard: {
+        backgroundColor: '#fff3e0',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#ffb74d',
+        borderStyle: 'dashed',
+    },
+    savingsText: {
+        fontSize: 15,
+        color: '#e65100',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    disclaimer: {
+        fontSize: 11,
+        color: '#999',
+        fontStyle: 'italic',
+        marginTop: 12,
+        textAlign: 'center',
+    },
+});
+
+export default CostCalculator;
