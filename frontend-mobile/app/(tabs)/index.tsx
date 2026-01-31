@@ -549,10 +549,10 @@ export default function DashboardScreen() {
       {isGuest && (
         <View style={styles.upsellCard}>
           <ShieldAlert size={24} color="#4caf50" style={{ marginBottom: 8 }} />
-          <Text style={styles.upsellTitle}>Save Your History</Text>
-          <Text style={styles.upsellDesc}>Create a free account to track your farm's health over time.</Text>
+          <Text style={styles.upsellTitle}>{t('saveYourHistory')}</Text>
+          <Text style={styles.upsellDesc}>{t('trackHealth')}</Text>
           <TouchableOpacity style={styles.upsellBtn} onPress={() => router.push('/profile')}>
-            <Text style={styles.upsellBtnText}>Register Now</Text>
+            <Text style={styles.upsellBtnText}>{t('registerNow')}</Text>
           </TouchableOpacity>
         </View>
       )}
