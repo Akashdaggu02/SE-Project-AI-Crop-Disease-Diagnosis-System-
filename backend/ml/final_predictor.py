@@ -54,13 +54,23 @@ def full_prediction(image_path, crop):
         CLASS_NAMES[crop]
     )
 
+    # If the crop is rice and confidence is low (not strongly classified as a disease),
+    # classify as Healthy.
+    if crop == 'rice' and confidence < 60.0:
+        disease = 'Healthy'
+        # Since we are defaulting to Healthy, we can set confidence to high or keep it.
+        # Setting to 0.0 or a high value? If it's "Healthy" by default, usually we imply it's safe.
+        # Let's keep the confidence or set to a standard value? 
+        # For this requirement, "classify to healthy" implies the result is Healthy.
+        pass
+
     severity = estimate_severity(image_path)
     stage = classify_stage(severity)
 
     return {
         "crop": crop,
         "disease": disease,
-        "confidence": round(confidence, 2),
-        "severity_percent": severity,
+        "confidence": float(round(confidence, 2)),
+        "severity_percent": float(severity),
         "stage": stage
     }

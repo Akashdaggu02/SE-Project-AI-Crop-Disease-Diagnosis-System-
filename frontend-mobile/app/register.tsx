@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { Mail, Lock, User, Leaf, Phone, Map } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
+import { T } from '../components/ui/T';
 
 export default function RegisterScreen() {
     const [email, setEmail] = useState('');
@@ -13,10 +15,11 @@ export default function RegisterScreen() {
     const [loading, setLoading] = useState(false);
     const { signIn } = useAuth();
     const router = useRouter();
+    const { t } = useLanguage();
 
     const handleRegister = async () => {
         if (!email || !password || !name) {
-            Alert.alert('Error', 'Please fill in all required fields');
+            Alert.alert(t('error'), t('registerErrorMissing'));
             return;
         }
 
@@ -32,8 +35,8 @@ export default function RegisterScreen() {
             await signIn(response.data.token, response.data.user);
             router.replace('/(tabs)');
         } catch (error: any) {
-            const message = error.response?.data?.error || 'Registration failed. Please try again.';
-            Alert.alert('Error', message);
+            const message = error.response?.data?.error || t('registerErrorInvalid');
+            Alert.alert(t('error'), message);
         } finally {
             setLoading(false);
         }
@@ -46,8 +49,8 @@ export default function RegisterScreen() {
         >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Create Account</Text>
-                    <Text style={styles.subtitle}>Join thousands of farmers protecting their livelihood</Text>
+                    <T style={styles.title}>createAccountTitle</T>
+                    <T style={styles.subtitle}>joinCommunity</T>
                 </View>
 
                 <View style={styles.form}>
@@ -55,7 +58,7 @@ export default function RegisterScreen() {
                         <User size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Full Name"
+                            placeholder={t('namePlaceholder')}
                             value={name}
                             onChangeText={setName}
                         />
@@ -65,7 +68,7 @@ export default function RegisterScreen() {
                         <Mail size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Email Address"
+                            placeholder={t('emailPlaceholder')}
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -77,7 +80,7 @@ export default function RegisterScreen() {
                         <Lock size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Password"
+                            placeholder={t('passwordPlaceholder')}
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
@@ -88,7 +91,7 @@ export default function RegisterScreen() {
                         <Map size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Farm Size (Acre) - Optional"
+                            placeholder={t('farmSizePlaceholder')}
                             value={farmSize}
                             onChangeText={setFarmSize}
                             keyboardType="numeric"
@@ -103,14 +106,14 @@ export default function RegisterScreen() {
                         {loading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.registerButtonText}>Register</Text>
+                            <T style={styles.registerButtonText}>registerButton</T>
                         )}
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Already have an account? </Text>
+                        <T style={styles.footerText}>haveAccount</T>
                         <TouchableOpacity onPress={() => router.back()}>
-                            <Text style={styles.footerLink}>Login</Text>
+                            <T style={styles.footerLink}>loginTitle</T>
                         </TouchableOpacity>
                     </View>
                 </View>

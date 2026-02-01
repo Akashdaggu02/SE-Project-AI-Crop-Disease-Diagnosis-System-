@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Calculator, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { useLanguage } from '../context/LanguageContext';
+import { T } from './ui/T';
 
 interface Pesticide {
     name: string;
@@ -66,20 +67,20 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                         value={landArea}
                         onChangeText={setLandArea}
                         keyboardType="decimal-pad"
-                        placeholder="Enter area"
+                        placeholder={t('enterArea')}
                     />
                     <View style={styles.unitSelector}>
                         <TouchableOpacity
                             style={[styles.unitButton, unit === 'acres' && styles.unitButtonActive]}
                             onPress={() => setUnit('acres')}
                         >
-                            <Text style={[styles.unitText, unit === 'acres' && styles.unitTextActive]}>Acres</Text>
+                            <T style={[styles.unitText, unit === 'acres' && styles.unitTextActive]}>acres</T>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.unitButton, unit === 'hectares' && styles.unitButtonActive]}
                             onPress={() => setUnit('hectares')}
                         >
-                            <Text style={[styles.unitText, unit === 'hectares' && styles.unitTextActive]}>Hectares</Text>
+                            <T style={[styles.unitText, unit === 'hectares' && styles.unitTextActive]}>hectares</T>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -111,9 +112,9 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                 )}
             </View>
 
-            <Text style={styles.disclaimer}>
-                * Costs are estimates based on average market prices and recommended dosages.
-            </Text>
+            <T style={styles.disclaimer}>
+                costDisclaimer
+            </T>
         </View>
     );
 };

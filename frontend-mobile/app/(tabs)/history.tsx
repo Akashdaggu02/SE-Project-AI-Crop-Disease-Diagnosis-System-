@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, RefreshControl } from 'react-native';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { Calendar, ChevronRight, Search, Filter, History as HistoryIcon, LogIn } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
+
 import api from '../../services/api';
+import { getLocalHistory } from '../../services/localHistory';
 
 export default function HistoryScreen() {
-    const [history, setHistory] = useState([]);
+    const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const { user, isGuest } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        if (!isGuest && user) {
+    useFocusEffect(
+        useCallback(() => {
             fetchHistory();
-        }
-    }, [user, isGuest]);
+        }, [user, isGuest])
+    );
 
     const fetchHistory = async () => {
         setLoading(true);
         try {
-            const response = await api.get('/diagnosis/history');
-            setHistory(response.data);
+            if (isGuest) {
+                const localData = await getLocalHistory();
+                setHistory(localData);
+            } else if (user) {
+                const response = await api.get('/diagnosis/history');
+                setHistory(response.data);
+            }
         } catch (error) {
             console.error('Failed to fetch history', error);
         } finally {
@@ -36,6 +44,17 @@ export default function HistoryScreen() {
     }, []);
 
     const handleItemPress = async (id: number) => {
+        if (isGuest) {
+            const item = history.find((h: any) => h.id === id);
+            if (item && item.fullData) {
+                router.push({
+                    pathname: '/results',
+                    params: { data: JSON.stringify(item.fullData) }
+                });
+            }
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await api.get(`/diagnosis/${id}`);
@@ -50,23 +69,8 @@ export default function HistoryScreen() {
         }
     };
 
-    if (isGuest) {
-        return (
-            <View style={styles.guestContainer}>
-                <View style={styles.guestContent}>
-                    <View style={styles.guestIconCircle}>
-                        <HistoryIcon size={48} color="#4caf50" />
-                    </View>
-                    <Text style={styles.guestTitle}>Save Your History</Text>
-                    <Text style={styles.guestSubtitle}>Sign in to keep track of your crop diagnoses, treatments, and progression over time.</Text>
-                    <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/login')}>
-                        <LogIn color="#fff" size={20} style={{ marginRight: 8 }} />
-                        <Text style={styles.loginButtonText}>Login / Register</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
-    }
+    // Guest check removed to allow local history viewing
+
 
     const renderItem = ({ item }: any) => (
         <TouchableOpacity style={styles.historyCard} onPress={() => handleItemPress(item.id)}>

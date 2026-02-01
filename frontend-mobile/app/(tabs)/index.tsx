@@ -9,6 +9,8 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
 import { useLanguage } from '../../context/LanguageContext';
+import { T } from '../../components/ui/T';
+import { addToLocalHistory } from '../../services/localHistory';
 
 const { width } = Dimensions.get('window');
 
@@ -174,12 +176,12 @@ export default function DashboardScreen() {
   if (!permission.granted && isScanning) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>We need camera access to scan your crops.</Text>
+        <T style={styles.permissionText}>cameraPermissionReq</T>
         <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text style={styles.permissionButtonText}>Allow Camera</Text>
+          <T style={styles.permissionButtonText}>allowCamera</T>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setIsScanning(false)} style={{ marginTop: 20 }}>
-          <Text style={{ color: '#666' }}>Cancel</Text>
+          <T style={{ color: '#666' }}>cancel</T>
         </TouchableOpacity>
       </View>
     );
@@ -247,7 +249,13 @@ export default function DashboardScreen() {
 
         if (!fetchResponse.ok) {
           const errorData = await fetchResponse.json();
-          throw new Error(errorData.error || 'Failed to detect disease');
+          // Create an error object that mimics Axios structure for consistency in catch block
+          const customError: any = new Error(errorData.error || 'Failed to detect disease');
+          customError.response = {
+            status: fetchResponse.status,
+            data: errorData
+          };
+          throw customError;
         }
 
         response = { data: await fetchResponse.json() };
@@ -277,6 +285,11 @@ export default function DashboardScreen() {
         });
       }
 
+      // Save for guest session
+      if (isGuest) {
+        await addToLocalHistory(response.data, selectedCrop);
+      }
+
       router.push({
         pathname: '/results',
         params: { data: JSON.stringify(response.data) }
@@ -287,7 +300,7 @@ export default function DashboardScreen() {
         setTimeout(() => {
           Alert.alert(
             'Image Quality Notice',
-            response.data.quality_warning + '\n\nFor better results, consider retaking the photo with better lighting and focus.',
+            response.data.quality_warning + '\n\n' + t('imageQualityWarningBody'),
             [{ text: 'OK' }]
           );
         }, 500);
@@ -308,21 +321,22 @@ export default function DashboardScreen() {
       console.log('Error type:', error.response?.data?.error);
       console.log('============================');
 
-      // Check if it's a low confidence error
-      if (error.response?.status === 400 && error.response?.data?.error === 'Low confidence prediction') {
-        console.log('✅ Detected low confidence error - showing alert');
+      // Check if it's a quality issue (Low confidence or rejected)
+      const errData = error.response?.data;
+      if (error.response?.status === 400 && (errData?.error === 'Low confidence prediction' || errData?.error === 'Image Rejected')) {
+        console.log('✅ Detected quality error - showing alert');
         Alert.alert(
-          'Image Quality Issue',
-          error.response.data.message || 'The image quality is not clear enough for accurate diagnosis. Please retake the photo with better lighting and focus.',
+          t('imageQualityIssue'),
+          errData.message || t('imageQualityWarningBody'),
           [
-            { text: 'Retake Photo', onPress: () => setImage(null), style: 'default' },
-            { text: 'Cancel', style: 'cancel' }
+            { text: t('retakePhoto'), onPress: () => setImage(null), style: 'default' },
+            { text: t('cancel'), style: 'cancel' }
           ]
         );
       } else {
-        console.log('❌ Not a low confidence error - showing generic error');
-        const message = error.response?.data?.error || 'Failed to detect disease.';
-        Alert.alert('Error', message);
+        console.log('❌ Not a quality error - showing generic error');
+        const message = errData?.message || errData?.error || 'Failed to detect disease.';
+        Alert.alert(t('error'), message);
       }
     } finally {
       setLoading(false);
@@ -355,7 +369,7 @@ export default function DashboardScreen() {
           <TouchableOpacity onPress={() => setIsScanning(false)}>
             <X size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.scanTitle}>{t('scanCrop')} {t(`crop_${selectedCrop}` as any)}</Text>
+          <Text style={styles.scanTitle}><T>scanCrop</T> <T>{`crop_${selectedCrop}` as any}</T></Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -367,7 +381,7 @@ export default function DashboardScreen() {
                 style={[styles.cropChip, selectedCrop === crop.id && styles.cropChipActive]}
                 onPress={() => setSelectedCrop(crop.id)}
               >
-                <Text style={[styles.cropChipText, selectedCrop === crop.id && styles.cropChipTextActive]}>{t(`crop_${crop.id}` as any)}</Text>
+                <T style={[styles.cropChipText, selectedCrop === crop.id && styles.cropChipTextActive]}>{`crop_${crop.id}` as any}</T>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -387,24 +401,24 @@ export default function DashboardScreen() {
                 <View style={[styles.iconCircle, { backgroundColor: '#e8f5e9' }]}>
                   <CameraIcon size={32} color="#4caf50" />
                 </View>
-                <Text style={styles.actionLabel}>{t('scanCrop')}</Text>
+                <T style={styles.actionLabel}>scanCrop</T>
               </TouchableOpacity>
               <TouchableOpacity style={styles.bigActionBtn} onPress={pickImage}>
                 <View style={[styles.iconCircle, { backgroundColor: '#e3f2fd' }]}>
                   <ImageIcon size={32} color="#2196f3" />
                 </View>
-                <Text style={styles.actionLabel}>{t('uploadImage')}</Text>
+                <T style={styles.actionLabel}>uploadImage</T>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         <View style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>{t('tipsTitle')}</Text>
-          <Text style={styles.tipText}>{t('tip1')}</Text>
-          <Text style={styles.tipText}>{t('tip2')}</Text>
-          <Text style={styles.tipText}>{t('tip3')}</Text>
-          <Text style={styles.tipText}>{t('tip4')}</Text>
+          <T style={styles.tipsTitle}>tipsTitle</T>
+          <T style={styles.tipText}>tip1</T>
+          <T style={styles.tipText}>tip2</T>
+          <T style={styles.tipText}>tip3</T>
+          <T style={styles.tipText}>tip4</T>
         </View>
 
         <TouchableOpacity
@@ -415,7 +429,7 @@ export default function DashboardScreen() {
           {loading ? <ActivityIndicator color="#fff" /> : (
             <>
               <ShieldAlert color="#fff" size={24} style={{ marginRight: 10 }} />
-              <Text style={styles.mainButtonText}>Analyze Disease</Text>
+              <T style={styles.mainButtonText}>analyzeDisease</T>
             </>
           )}
         </TouchableOpacity>
@@ -430,7 +444,7 @@ export default function DashboardScreen() {
       <View style={styles.dashboardHeader}>
         <View style={styles.headerLeft}>
           <View>
-            <Text style={styles.greeting}>{t('namaste')}</Text>
+            <T style={styles.greeting}>namaste</T>
             <Text style={styles.farmerName}>{user ? user.name : t('farmer')}</Text>
           </View>
           <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileAvatarContainer}>
@@ -495,12 +509,12 @@ export default function DashboardScreen() {
                       };
                       setLocation(coords);
                       await fetchWeather(coords.latitude, coords.longitude);
-                      Alert.alert('GPS Enabled', 'Location access granted! Weather data will now be displayed.');
+                      Alert.alert(t('gpsEnabled'), 'Location access granted! Weather data will now be displayed.');
                     } catch (error) {
-                      Alert.alert('Error', 'Could not get your location. Please try again.');
+                      Alert.alert(t('error'), t('locationError'));
                     }
                   } else {
-                    Alert.alert('Permission Denied', 'Location permission is required for weather-based advice. Please enable it in your device settings.');
+                    Alert.alert(t('permissionDenied'), t('locationPermissionRequired'));
                   }
                 }
               }
@@ -525,8 +539,8 @@ export default function DashboardScreen() {
               <CameraIcon size={32} color="#fff" />
             </View>
             <View>
-              <Text style={styles.heroTitle}>{t('scanCrop')}</Text>
-              <Text style={styles.heroSubtitle}>{t('instantDiagnosis')}</Text>
+              <T style={styles.heroTitle}>scanCrop</T>
+              <T style={styles.heroSubtitle}>instantDiagnosis</T>
             </View>
           </View>
           <ArrowRight size={24} color="#2E7D32" />
@@ -535,14 +549,14 @@ export default function DashboardScreen() {
 
       {/* Quick Tips / Crops */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('supportedCrops')}</Text>
+        <T style={styles.sectionTitle}>supportedCrops</T>
         <View style={styles.grid}>
           {CROP_OPTIONS.map((crop) => (
             <View key={crop.id} style={styles.gridItem}>
               <View style={styles.gridIconImage}>
                 <Image source={crop.image} style={styles.cropImage} />
               </View>
-              <Text style={styles.gridLabel}>{t(`crop_${crop.id}` as any)}</Text>
+              <T style={styles.gridLabel}>{`crop_${crop.id}` as any}</T>
             </View>
           ))}
         </View>
@@ -552,10 +566,10 @@ export default function DashboardScreen() {
       {isGuest && (
         <View style={styles.upsellCard}>
           <ShieldAlert size={24} color="#4caf50" style={{ marginBottom: 8 }} />
-          <Text style={styles.upsellTitle}>Save Your History</Text>
-          <Text style={styles.upsellDesc}>Create a free account to track your farm's health over time.</Text>
+          <T style={styles.upsellTitle}>saveHistory</T>
+          <T style={styles.upsellDesc}>createAccountDesc</T>
           <TouchableOpacity style={styles.upsellBtn} onPress={() => router.push('/profile')}>
-            <Text style={styles.upsellBtnText}>Register Now</Text>
+            <T style={styles.upsellBtnText}>registerNow</T>
           </TouchableOpacity>
         </View>
       )}
@@ -570,7 +584,7 @@ export default function DashboardScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('selectLanguage')}</Text>
+              <T style={styles.modalTitle}>selectLanguage</T>
               <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
                 <X size={24} color="#666" />
               </TouchableOpacity>

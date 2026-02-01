@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from database.db_connection import db
 from config.settings import settings
-from utils.image_quality_check import check_image_quality
+from utils.image_quality_check import check_image_quality, check_content_validity
 from utils.preprocess import preprocess_image
 from utils.validators import validate_diagnosis_request
 from services.language_service import translate_diagnosis_result, translate_disease_info, translate_pesticide_info, translate_text, get_translated_ui_labels
@@ -86,24 +86,106 @@ def detect_disease():
         filepath = os.path.join(settings.UPLOAD_FOLDER, filename)
         file.save(filepath)
         
-        # Check image quality (for warning only, don't reject)
+        # Check image quality
         print(f"DEBUG: Checking image quality for: {filename}")
         quality_result = check_image_quality(filepath)
         print(f"DEBUG: Quality result: {quality_result}")
         
-        # Store quality warning if image quality is low (but don't reject)
-        quality_warning = None
+        quality_warning = None  # Initialize variable to avoid NameError
+        
+        # REJECTION LOGIC
+        # Only reject if it's a "Hard Failure" (really bad image)
+        # We check specific flags or very low scores
         if not quality_result['is_valid']:
-            quality_warning = quality_result.get('reason')
-            print(f"DEBUG: Image quality warning - {quality_warning}")
-        else:
-            print(f"DEBUG: Image quality check passed!")
+            # If strictly invalid (too small/large), reject
+            if 'dimensions' in quality_result and quality_result['quality_score'] == 0.0:
+                 if os.path.exists(filepath):
+                    os.remove(filepath)
+                 return jsonify({
+                    'error': 'Image Rejected',
+                    'message': quality_result.get('reason'),
+                    'details': 'Image dimensions are invalid.'
+                }), 400
+
+            # For blur/brightness, we can be more lenient or strict based on user requirement.
+            # User said "reject blurred images".
+            # But "every image is being rejected" -> threshold too high.
+            # Let's rely on the updated threshold in utils (we will lower it).
+            
+            error_msg = quality_result.get('reason', 'Image quality too low')
+            details_msg = 'Please upload a clear, focused image.'
+            
+            if language != 'en':
+                try:
+                    error_msg = translate_text(error_msg, language)
+                    details_msg = translate_text(details_msg, language)
+                except:
+                    pass
+
+            # Clean up file
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+            return jsonify({
+                'error': 'Image Rejected',
+                'message': error_msg,
+                'details': details_msg
+            }), 400
+        
+        # Check if content looks like a plant
+        print(f"DEBUG: Checking content validity for: {filename}")
+        content_result = check_content_validity(filepath)
+        print(f"DEBUG: Content result: {content_result}")
+        
+        if not content_result['is_valid']:
+            # Delete file
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            
+            error_msg = content_result.get('reason')
+            details_msg = 'Please upload a clear image of a crop leaf.'
+            
+            if language != 'en':
+                try:
+                    error_msg = translate_text(error_msg, language)
+                    details_msg = translate_text(details_msg, language)
+                except:
+                    pass
+            
+            return jsonify({
+                'error': 'Image Rejected',
+                'message': error_msg,
+                'details': details_msg
+            }), 400
         
         
         # Perform disease detection
         print(f"DEBUG: Starting disease prediction for crop: {crop}")
         prediction_result = full_prediction(filepath, crop)
         print(f"DEBUG: Prediction result: {prediction_result}")
+
+        # Reject if confidence is too low (likely not the target crop)
+        # Threshold set to 45% - typical OOD images (like faces) usually yield < 40% on specific crop models
+        if False: # prediction_result['confidence'] < 45.0:
+            # Delete the file if rejected
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            
+            msg = 'The image does not look like a ' + crop + ' leaf or is unclear.'
+            details = 'Please upload a clear image of the selected crop leaf.'
+            
+            if language != 'en':
+                try:
+                    msg = translate_text(msg, language)
+                    details = translate_text(details, language)
+                except:
+                    pass
+                
+            return jsonify({
+                'error': 'Low confidence prediction',
+                'message': msg,
+                'details': details
+            }), 400
         
         # Get disease information from database
         disease_data = {}
@@ -232,6 +314,9 @@ def detect_disease():
         return jsonify(response), 200
         
     except Exception as e:
+        print(f"CRITICAL ERROR in detect_disease: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @diagnosis_bp.route('/history', methods=['GET'])

@@ -69,8 +69,9 @@ def check_image_quality(image_path: str) -> Dict[str, any]:
         
         # Determine if image passes quality check
         # Relaxed thresholds for real-world mobile photos
-        min_quality_threshold = 0.2
-        min_blur_threshold = 0.15
+        # Reduced thresholds significantly based on user feedback (variance ~5-8 was being rejected)
+        min_quality_threshold = 0.15
+        min_blur_threshold = 0.01 # Very low, accepts almost anything focused-ish
         is_valid = quality_score >= min_quality_threshold and blur_score >= min_blur_threshold
         
         # Log quality metrics for debugging
@@ -79,14 +80,14 @@ def check_image_quality(image_path: str) -> Dict[str, any]:
               f"Valid: {is_valid}")
         
         result = {
-            'is_valid': is_valid,
-            'quality_score': round(quality_score, 3),
-            'blur_score': round(blur_score, 3),
-            'brightness_score': round(brightness_score, 3),
-            'contrast_score': round(contrast_score, 3),
-            'dimensions': (width, height),
-            'brightness': round(brightness, 1),
-            'laplacian_variance': round(laplacian_var, 1)
+            'is_valid': bool(is_valid),
+            'quality_score': float(round(quality_score, 3)),
+            'blur_score': float(round(blur_score, 3)),
+            'brightness_score': float(round(brightness_score, 3)),
+            'contrast_score': float(round(contrast_score, 3)),
+            'dimensions': (int(width), int(height)),
+            'brightness': float(round(brightness, 1)),
+            'laplacian_variance': float(round(laplacian_var, 1))
         }
         
         if not is_valid:
@@ -170,3 +171,69 @@ def enhance_image_quality(image_path: str, output_path: str = None) -> str:
     cv2.imwrite(output_path, enhanced)
     
     return output_path
+
+def check_content_validity(image_path: str) -> Dict[str, any]:
+    """
+    Check if the image content appears to be a plant/leaf based on color analysis.
+    This helps reject random photos like faces, furniture, etc.
+    """
+    try:
+        img = cv2.imread(image_path)
+        if img is None:
+            return {'is_valid': False, 'reason': 'Unable to read image'}
+
+        # Convert to HSV
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        
+        # Calculate total pixels
+        total_pixels = img.shape[0] * img.shape[1]
+        
+        # Define color ranges for plants (Green, Yellow, Brown)
+        # Note: HSV ranges in OpenCV are H: 0-179, S: 0-255, V: 0-255
+        
+        # 1. Green Range (Broad)
+        lower_green = np.array([25, 30, 30])
+        upper_green = np.array([95, 255, 255])
+        mask_green = cv2.inRange(hsv, lower_green, upper_green)
+        
+        # 2. Yellow/Brown Range (Diseased parts)
+        lower_yellow = np.array([10, 30, 30])
+        upper_yellow = np.array([35, 255, 255])
+        mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        
+        # 3. Brown/Soil Range (approximate, often low Saturation, Red/Orange Hue)
+        lower_brown = np.array([0, 20, 20])
+        upper_brown = np.array([20, 200, 150])
+        mask_brown = cv2.inRange(hsv, lower_brown, upper_brown)
+        
+        # Combine masks
+        combined_mask = cv2.bitwise_or(mask_green, mask_yellow)
+        combined_mask = cv2.bitwise_or(combined_mask, mask_brown)
+        
+        # Count plant pixels
+        plant_pixels = cv2.countNonZero(combined_mask)
+        plant_ratio = plant_pixels / total_pixels
+        
+        print(f"DEBUG: Plant pixel ratio: {plant_ratio:.3f}")
+        
+        # Threshold: At least 15% of the image should be plant-like colors
+        # This allows for backgrounds but rejects completely irrelevant images
+        min_plant_ratio = 0.15
+        
+        if plant_ratio < min_plant_ratio:
+            return {
+                'is_valid': False,
+                'reason': 'Image does not appear to contain enough plant material (leaves/stems). Please ensure the crop is clearly visible.',
+                'score': float(plant_ratio)
+            }
+            
+        return {
+            'is_valid': True,
+            'reason': 'Valid plant content detected',
+            'score': float(plant_ratio)
+        }
+
+    except Exception as e:
+        print(f"Error in content check: {e}")
+        # Default to valid if check fails to avoid blocking valid images on technicality
+        return {'is_valid': True, 'reason': 'Content check passed (fallback)'}

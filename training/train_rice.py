@@ -23,15 +23,15 @@ if not os.path.exists(MODELS_DIR):
     os.makedirs(MODELS_DIR)
 
 print(f"Checking dataset at {DATASET_DIR}...")
-train_dir = os.path.join(DATASET_DIR, 'train')
-val_dir = os.path.join(DATASET_DIR, 'val')
-
-if not os.path.exists(train_dir) or not os.path.exists(val_dir):
-    print(f"Error: Train/Val directories not found in {DATASET_DIR}")
+# Check if dataset directory exists
+if not os.path.exists(DATASET_DIR):
+    print(f"Error: Dataset directory not found in {DATASET_DIR}")
     exit(1)
 
 # Data Generators
 print("Setting up Data Generators...")
+
+# Training generator with augmentation and validation split
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
     rescale=1./255,
     rotation_range=40,
@@ -40,27 +40,36 @@ train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
     height_shift_range=0.2,
     shear_range=0.2,
     zoom_range=0.2,
-    fill_mode='nearest'
+    fill_mode='nearest',
+    validation_split=0.2  # Using 20% for validation
 )
 
-val_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
+# Validation generator (only rescaling) with validation split
+val_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1./255,
+    validation_split=0.2
+)
 
 print("Loading Training Data...")
 train_generator = train_datagen.flow_from_directory(
-    train_dir,
+    DATASET_DIR,
     target_size=IMAGE_SIZE,
     batch_size=BATCH_SIZE,
     class_mode='categorical',
-    shuffle=True
+    subset='training', # Set as training data
+    shuffle=True,
+    seed=42 # Ensure consistent split
 )
 
 print("Loading Validation Data...")
 validation_generator = val_datagen.flow_from_directory(
-    val_dir,
+    DATASET_DIR,
     target_size=IMAGE_SIZE,
     batch_size=BATCH_SIZE,
     class_mode='categorical',
-    shuffle=False
+    subset='validation', # Set as validation data
+    shuffle=False,
+    seed=42 # Ensure consistent split matches training
 )
 
 num_classes = train_generator.num_classes

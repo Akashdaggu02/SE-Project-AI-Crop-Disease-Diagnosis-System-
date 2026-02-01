@@ -61,7 +61,7 @@ export default function ResultsScreen() {
             });
         } catch (error) {
             console.error('Error playing sound', error);
-            Alert.alert(t('error'), 'Failed to play voice explanation');
+            Alert.alert(t('error'), t('failedVoice'));
             setIsPlaying(false);
         }
     };
@@ -119,7 +119,7 @@ export default function ResultsScreen() {
 
                 <View style={styles.statsRow}>
                     <View style={styles.statBox}>
-                        <Text style={styles.statLabel}>{labels.severity || 'Severity'}</Text>
+                        <Text style={styles.statLabel}>{labels.severity || t('severity')}</Text>
                         <Text style={styles.statValue}>{prediction.severity_percent.toFixed(1)}%</Text>
                     </View>
                     <View style={styles.statBox}>

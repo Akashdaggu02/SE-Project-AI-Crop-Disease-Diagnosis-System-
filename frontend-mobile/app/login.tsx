@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { Mail, Lock, User, Leaf } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
+import { T } from '../components/ui/T';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -11,10 +13,11 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
     const { signIn, continueAsGuest } = useAuth();
     const router = useRouter();
+    const { t } = useLanguage();
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please enter both email and password');
+            Alert.alert(t('error'), t('loginErrorMissing'));
             return;
         }
 
@@ -24,8 +27,8 @@ export default function LoginScreen() {
             await signIn(response.data.token, response.data.user);
             router.replace('/(tabs)');
         } catch (error: any) {
-            const message = error.response?.data?.error || 'Login failed. Please check your credentials.';
-            Alert.alert('Login Failed', message);
+            const message = error.response?.data?.error || t('loginErrorInvalid');
+            Alert.alert(t('loginErrorTitle'), message);
         } finally {
             setLoading(false);
         }
@@ -41,8 +44,8 @@ export default function LoginScreen() {
                     <View style={styles.logoContainer}>
                         <Leaf color="#4caf50" size={48} />
                     </View>
-                    <Text style={styles.title}>AI Crop Diagnosis</Text>
-                    <Text style={styles.subtitle}>Protect your crops with AI-powered insights</Text>
+                    <T style={styles.title}>appTitle</T>
+                    <T style={styles.subtitle}>appSubtitle</T>
                 </View>
 
                 <View style={styles.form}>
@@ -50,7 +53,7 @@ export default function LoginScreen() {
                         <Mail size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Email Address"
+                            placeholder={t('emailPlaceholder')}
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -62,7 +65,7 @@ export default function LoginScreen() {
                         <Lock size={20} color="#666" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Password"
+                            placeholder={t('passwordPlaceholder')}
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
@@ -77,7 +80,7 @@ export default function LoginScreen() {
                         {loading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.loginButtonText}>Login</Text>
+                            <T style={styles.loginButtonText}>loginButton</T>
                         )}
                     </TouchableOpacity>
 
@@ -88,13 +91,13 @@ export default function LoginScreen() {
                             router.replace('/(tabs)');
                         }}
                     >
-                        <Text style={styles.guestButtonText}>Continue as Guest</Text>
+                        <T style={styles.guestButtonText}>continueGuest</T>
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <T style={styles.footerText}>noAccount</T>
                         <TouchableOpacity onPress={() => router.push('/register')}>
-                            <Text style={styles.footerLink}>Register Now</Text>
+                            <T style={styles.footerLink}>registerNow</T>
                         </TouchableOpacity>
                     </View>
                 </View>
