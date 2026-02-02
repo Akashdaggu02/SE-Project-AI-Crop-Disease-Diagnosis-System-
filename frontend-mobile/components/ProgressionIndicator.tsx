@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { AlertCircle, AlertTriangle, AlertOctagon } from 'lucide-react-native';
+import { useLanguage } from '../context/LanguageContext';
+
 
 interface ProgressionIndicatorProps {
     severity: number; // 0-100
@@ -8,10 +10,11 @@ interface ProgressionIndicatorProps {
 }
 
 const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, stage }) => {
+    const { t } = useLanguage();
     const getSeverityLevel = () => {
-        if (severity < 30) return { level: 'Early', color: '#4caf50', icon: AlertCircle, bg: '#e8f5e9' };
-        if (severity < 60) return { level: 'Moderate', color: '#ff9800', icon: AlertTriangle, bg: '#fff3e0' };
-        return { level: 'Severe', color: '#d32f2f', icon: AlertOctagon, bg: '#ffebee' };
+        if (severity < 30) return { level: t('earlyStage'), color: '#4caf50', icon: AlertCircle, bg: '#e8f5e9' };
+        if (severity < 60) return { level: t('moderateStage'), color: '#ff9800', icon: AlertTriangle, bg: '#fff3e0' };
+        return { level: t('severeStage'), color: '#d32f2f', icon: AlertOctagon, bg: '#ffebee' };
     };
 
     const severityInfo = getSeverityLevel();
@@ -22,9 +25,9 @@ const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, s
             <View style={styles.header}>
                 <Icon size={24} color={severityInfo.color} />
                 <View style={styles.headerText}>
-                    <Text style={styles.title}>Disease Progression</Text>
+                    <Text style={styles.title}>{t('diseaseProgression')}</Text>
                     <Text style={[styles.level, { color: severityInfo.color }]}>
-                        {severityInfo.level} Stage
+                        {severityInfo.level}
                     </Text>
                 </View>
             </View>
@@ -46,15 +49,15 @@ const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, s
 
             <View style={[styles.infoCard, { backgroundColor: severityInfo.bg }]}>
                 <Text style={[styles.infoText, { color: severityInfo.color }]}>
-                    {severity < 30 && '✓ Early detection! Treatment is most effective at this stage.'}
-                    {severity >= 30 && severity < 60 && '⚠ Moderate infection. Immediate treatment recommended.'}
-                    {severity >= 60 && '🚨 Severe infection. Urgent treatment required to prevent crop loss.'}
+                    {severity < 30 && t('earlyDetectionTip')}
+                    {severity >= 30 && severity < 60 && t('moderateInfectionTip')}
+                    {severity >= 60 && t('severeInfectionTip')}
                 </Text>
             </View>
 
             {stage && (
                 <View style={styles.stageInfo}>
-                    <Text style={styles.stageLabel}>Current Stage:</Text>
+                    <Text style={styles.stageLabel}>{t('currentStage')}</Text>
                     <Text style={styles.stageValue}>{stage}</Text>
                 </View>
             )}

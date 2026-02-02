@@ -32,8 +32,8 @@ export default function DashboardScreen() {
   const [locationPermission, setLocationPermission] = useState(false);
   const [weather, setWeather] = useState<{
     temp: number;
-    description: string;
-    location: string;
+    code: number;
+    location: string | null;
   } | null>(null);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
 
@@ -72,8 +72,8 @@ export default function DashboardScreen() {
       if (weatherData.current_weather) {
         setWeather({
           temp: Math.round(weatherData.current_weather.temperature),
-          description: getWeatherDescription(weatherData.current_weather.weathercode),
-          location: locationName,
+          code: weatherData.current_weather.weathercode,
+          location: locationName || null,
         });
       }
     } catch (error) {
@@ -81,8 +81,8 @@ export default function DashboardScreen() {
       // Fallback
       setWeather({
         temp: 28,
-        description: 'Clear',
-        location: t('weatherUnavailable'), // Better than 'Your Location'
+        code: 0, // Clear Sky default
+        location: null,
       });
     }
   };
@@ -96,21 +96,7 @@ export default function DashboardScreen() {
     } catch (e) {
       console.log("Reverse geocode failed", e);
     }
-    return "Your Location";
-  };
-
-  const getWeatherDescription = (code: number) => {
-    // WMO Weather interpretation codes (WW)
-    const codes: { [key: number]: string } = {
-      0: 'Clear Sky',
-      1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
-      45: 'Fog', 48: 'Depositing Rime Fog',
-      51: 'Light Drizzle', 53: 'Moderate Drizzle', 55: 'Dense Drizzle',
-      61: 'Slight Rain', 63: 'Moderate Rain', 65: 'Heavy Rain',
-      71: 'Slight Snow', 73: 'Moderate Snow', 75: 'Heavy Snow',
-      95: 'Thunderstorm'
-    };
-    return codes[code] || 'Clear Sky';
+    return null;
   };
 
   // Request location permission and get location
@@ -134,8 +120,8 @@ export default function DashboardScreen() {
                 console.log('Geolocation error:', error);
                 setWeather({
                   temp: 28,
-                  description: 'Clear Sky',
-                  location: 'Enable GPS for weather',
+                  code: 0,
+                  location: null,
                 });
               }
             );
@@ -159,8 +145,8 @@ export default function DashboardScreen() {
           } else {
             setWeather({
               temp: 28,
-              description: 'Clear Sky',
-              location: 'Enable GPS for weather',
+              code: 0, // Clear Sky
+              location: null,
             });
           }
         }
@@ -235,6 +221,7 @@ export default function DashboardScreen() {
         const formData = new FormData();
         formData.append('image', blob, 'photo.jpg');
         formData.append('crop', selectedCrop);
+        formData.append('language', language);
 
         // Add location if available
         if (location) {
@@ -266,6 +253,7 @@ export default function DashboardScreen() {
           type: `image/${fileType}`,
         } as any);
         formData.append('crop', selectedCrop);
+        formData.append('language', language);
 
         // Add location if available
         if (location) {
@@ -455,10 +443,10 @@ export default function DashboardScreen() {
             {location ? (weather ? `${weather.temp}°C` : 'Loading...') : t('notAvailable')}
           </Text>
           <Text style={styles.weatherDesc}>
-            {location ? (weather ? weather.description : 'Fetching weather...') : t('weatherUnavailable')}
+            {location ? (weather ? t(`weather_${weather.code}` as any) : t('weather')) : t('weatherUnavailable')}
           </Text>
           <Text style={styles.weatherLocation}>
-            {location ? (weather ? weather.location : t('weather')) : t('enableGps')}
+            {location ? (weather ? (weather.location || t('yourLocation')) : t('weather')) : t('enableGps')}
           </Text>
           <TouchableOpacity
             style={[styles.locationBadge, !location && styles.locationBadgeDisabled]}
