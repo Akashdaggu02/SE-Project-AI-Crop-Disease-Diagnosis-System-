@@ -52,6 +52,12 @@ def detect_disease():
                 if user:
                     language = user[0]['preferred_language']
         
+        # Check if language is provided in form data (overrides profile)
+        form_language = request.form.get('language')
+        if form_language:
+             print(f"DEBUG: Using language from form: {form_language}")
+             language = form_language
+        
         # Check if image file is present
         if 'image' not in request.files:
             print("DEBUG: No 'image' key in request.files")
