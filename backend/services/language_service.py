@@ -255,7 +255,11 @@ UI_LABELS_ENGLISH = {
     "crop_rice": "Rice",
     "stage_early": "Early Stage",
     "stage_moderate": "Moderate Stage",
-    "stage_severe": "Severe Stage"
+    "stage_severe": "Severe Stage",
+    "diagnosis_history_title": "Diagnosis History",
+    "no_diagnoses_found": "No diagnoses yet",
+    "history_empty_message": "Your past crop diagnoses will appear here.",
+    "start_new_diagnosis_btn": "Start New Diagnosis"
 }
 
 def get_translated_ui_labels(target_language: str) -> Dict[str, str]:

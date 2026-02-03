@@ -7,12 +7,14 @@ import { useLanguage } from '../context/LanguageContext';
 import api from '../services/api';
 
 const LANGUAGES = [
-    { code: 'en', name: 'English' },
-    { code: 'hi', name: 'Hindi' },
-    { code: 'te', name: 'Telugu' },
-    { code: 'ta', name: 'Tamil' },
-    { code: 'kn', name: 'Kannada' },
-    { code: 'mr', name: 'Marathi' },
+    { code: 'en', name: 'English', nativeName: 'English' },
+    { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
+    { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
+    { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
+    { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+    { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
+    { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+    { code: 'tcy', name: 'Tulu', nativeName: 'ತುಳು' },
 ];
 
 export default function ProfileScreen() {
@@ -89,7 +91,7 @@ export default function ProfileScreen() {
                     </View>
                     <View style={styles.menuContent}>
                         <Text style={styles.menuLabel}>{t('appLanguage')}</Text>
-                        <Text style={styles.menuSubLabel}>{LANGUAGES.find(l => l.code === language)?.name}</Text>
+                        <Text style={styles.menuSubLabel}>{LANGUAGES.find(l => l.code === language)?.nativeName}</Text>
                     </View>
                     <ChevronRight size={20} color="#ccc" />
                 </TouchableOpacity>
@@ -103,7 +105,7 @@ export default function ProfileScreen() {
                                 onPress={() => changeLanguage(lang.code)}
                             >
                                 <Text style={[styles.langOptionText, language === lang.code && styles.langOptionTextSelected]}>
-                                    {lang.name}
+                                    {lang.nativeName}
                                 </Text>
                             </TouchableOpacity>
                         ))}

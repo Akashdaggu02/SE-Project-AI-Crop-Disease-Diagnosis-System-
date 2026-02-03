@@ -350,9 +350,15 @@ def get_history():
             (user_id, per_page, offset)
         )
         
+        # Get user's preferred language
+        language = 'en'
+        user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (user_id,))
+        if user:
+            language = user[0]['preferred_language']
+
         history_list = []
         for record in history:
-            history_list.append({
+            item = {
                 'id': record['id'],
                 'crop': record['crop'],
                 'disease': record['disease'],
@@ -360,7 +366,20 @@ def get_history():
                 'severity_percent': record['severity_percent'],
                 'stage': record['stage'],
                 'created_at': record['created_at']
-            })
+            }
+            
+            # Translate if needed
+            if language != 'en':
+                translated = translate_diagnosis_result(item, language)
+                # Overwrite original fields with translated ones for seamless frontend display
+                if 'disease_local' in translated:
+                    item['disease'] = translated['disease_local']
+                if 'crop_local' in translated:
+                    item['crop'] = translated['crop_local']
+                if 'stage_local' in translated:
+                    item['stage'] = translated['stage_local']
+            
+            history_list.append(item)
         
         return jsonify({'history': history_list, 'page': page, 'per_page': per_page}), 200
         

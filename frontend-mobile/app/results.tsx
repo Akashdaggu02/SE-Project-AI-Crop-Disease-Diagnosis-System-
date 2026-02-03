@@ -83,8 +83,21 @@ export default function ResultsScreen() {
     // Only use backend labels if they match the current UI language preference
     const labels = (scanLanguage === language) ? (result.ui_translations || {}) : {};
 
-    const displayDisease = prediction.disease_local || prediction.disease.replace(/___/g, ': ').replace(/_/g, ' ');
-    const displayStage = prediction.stage_local || prediction.stage;
+    // For disease name: use translated version or translate the key
+    let displayDisease = prediction.disease_local || prediction.disease.replace(/___/g, ': ').replace(/_/g, ' ');
+    if (prediction.disease === 'Healthy' && !prediction.disease_local) {
+        displayDisease = t('healthy');
+    }
+
+    // For stage: use translated version or translate the key
+    let displayStage = prediction.stage_local || prediction.stage;
+    if (prediction.stage === 'Healthy Stage' && !prediction.stage_local) {
+        displayStage = t('healthyStage');
+    } else if (prediction.stage && !prediction.stage_local) {
+        // Translate stage keys like "Early Stage", "Moderate Stage", "Severe Stage"
+        const stageKey = prediction.stage.toLowerCase().replace(' ', '_');
+        displayStage = t(stageKey as any) || prediction.stage;
+    }
 
     return (
         <ScrollView style={styles.container}>
@@ -164,9 +177,13 @@ export default function ResultsScreen() {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{labels.disease_info || t('diseaseInfo')}</Text>
-                <Text style={styles.infoText}>{disease_info.description}</Text>
+                <Text style={styles.infoText}>
+                    {disease_info.description || (prediction.disease === 'Healthy' ? t('diseaseDescription') : '')}
+                </Text>
                 <Text style={styles.subSubtitle}>{labels.symptoms || t('symptoms')}:</Text>
-                <Text style={styles.infoText}>{disease_info.symptoms}</Text>
+                <Text style={styles.infoText}>
+                    {disease_info.symptoms || (prediction.disease === 'Healthy' ? t('symptomsHealthy') : '')}
+                </Text>
             </View>
 
             {prediction.disease !== 'Healthy' && (
@@ -201,7 +218,9 @@ export default function ResultsScreen() {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{labels.prevention_best_practices || t('preventionBestPractices')}</Text>
-                <Text style={styles.infoText}>{disease_info.prevention_steps}</Text>
+                <Text style={styles.infoText}>
+                    {disease_info.prevention_steps || (prediction.disease === 'Healthy' ? t('preventionHealthy') : '')}
+                </Text>
 
                 {disease_info.organic_alternatives && (
                     <>

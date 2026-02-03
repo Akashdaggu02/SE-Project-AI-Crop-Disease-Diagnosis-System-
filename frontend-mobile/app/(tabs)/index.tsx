@@ -53,6 +53,8 @@ export default function DashboardScreen() {
     { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
     { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
     { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
+    { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+    { code: 'tcy', name: 'Tulu', nativeName: 'ತುಳು' },
   ];
 
   // Fetch weather data based on location
@@ -95,21 +97,22 @@ export default function DashboardScreen() {
     } catch (e) {
       console.log("Reverse geocode failed", e);
     }
-    return "Your Location";
+    return t('yourLocation');
   };
 
   const getWeatherDescription = (code: number) => {
-    // WMO Weather interpretation codes (WW)
-    const codes: { [key: number]: string } = {
-      0: 'Clear Sky',
-      1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
-      45: 'Fog', 48: 'Depositing Rime Fog',
-      51: 'Light Drizzle', 53: 'Moderate Drizzle', 55: 'Dense Drizzle',
-      61: 'Slight Rain', 63: 'Moderate Rain', 65: 'Heavy Rain',
-      71: 'Slight Snow', 73: 'Moderate Snow', 75: 'Heavy Snow',
-      95: 'Thunderstorm'
+    // WMO Weather interpretation codes (WW) - return translation keys
+    const codeToKey: { [key: number]: string } = {
+      0: 'clearSky',
+      1: 'mainlyClear', 2: 'partlyCloudy', 3: 'overcast',
+      45: 'fog', 48: 'fog',
+      51: 'drizzle', 53: 'drizzle', 55: 'drizzle',
+      61: 'rain', 63: 'rain', 65: 'rain',
+      71: 'snow', 73: 'snow', 75: 'snow',
+      95: 'thunderstorm'
     };
-    return codes[code] || 'Clear Sky';
+    const key = codeToKey[code] || 'clearSky';
+    return t(key as any);
   };
 
   // Request location permission and get location

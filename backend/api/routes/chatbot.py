@@ -165,6 +165,10 @@ def send_message():
         data = request.get_json()
         message = data.get('message', '').strip()
         
+        # Allow language to be sent in request (for guest users)
+        if 'language' in data:
+            language = data.get('language', 'en')
+        
         if not message:
             return jsonify({'error': 'Message is required'}), 400
         

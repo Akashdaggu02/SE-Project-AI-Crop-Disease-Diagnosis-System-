@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Send, User, Bot, HelpCircle } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import api from '../../services/api';
 
 interface Message {
@@ -12,10 +13,11 @@ interface Message {
 }
 
 export default function ChatScreen() {
+    const { t, language } = useLanguage();
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: "Hello! I'm your AI Agricultural Assistant. How can I help you with your crops today?",
+            text: t('chatbotWelcome'),
             sender: 'bot',
             timestamp: new Date(),
         }
@@ -71,7 +73,10 @@ export default function ChatScreen() {
         setLoading(true);
 
         try {
-            const response = await api.post('/chatbot/message', { message: userMessage.text });
+            const response = await api.post('/chatbot/message', {
+                message: userMessage.text,
+                language: language  // Send current language
+            });
 
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -83,7 +88,7 @@ export default function ChatScreen() {
             setMessages((prev) => [...prev, botMessage]);
         } catch (error: any) {
             console.error('Chat error', error);
-            const errorMessage = error.response?.data?.error || "Sorry, I'm having trouble connecting to my brain right now.";
+            const errorMessage = error.response?.data?.error || t('chatbotError');
 
             setMessages((prev) => [
                 ...prev,
@@ -134,10 +139,10 @@ export default function ChatScreen() {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Agri-AI Assistant</Text>
+                <Text style={styles.headerTitle}>{t('chatbotTitle')}</Text>
                 <View style={styles.onlineStatus}>
                     <View style={styles.onlineDot} />
-                    <Text style={styles.onlineText}>Online</Text>
+                    <Text style={styles.onlineText}>{t('chatbotOnline')}</Text>
                 </View>
             </View>
 
@@ -154,14 +159,14 @@ export default function ChatScreen() {
             {isGuest && (
                 <View style={styles.guestReminder}>
                     <HelpCircle size={14} color="#666" />
-                    <Text style={styles.guestReminderText}>Sign in to save your conversation history</Text>
+                    <Text style={styles.guestReminderText}>{t('chatbotGuestReminder')}</Text>
                 </View>
             )}
 
             <View style={styles.inputArea}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Ask about crops, pests, or weather..."
+                    placeholder={t('chatbotPlaceholder')}
                     value={inputText}
                     onChangeText={setInputText}
                     multiline

@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from database.db_connection import db
 from config.settings import settings
 from utils.validators import validate_user_registration, validate_email, validate_language
+from services.language_service import get_translated_ui_labels
 
 user_bp = Blueprint('user', __name__)
 
@@ -233,6 +234,29 @@ def update_language():
         )
         
         return jsonify({'message': 'Language updated successfully', 'language': language}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@user_bp.route('/translations', methods=['GET'])
+def get_translations():
+    """Get UI translations for a specific language"""
+    try:
+        language = request.args.get('lang', 'en')
+        
+        # If user is logged in, use their preference if lang not specified
+        if 'lang' not in request.args:
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+                token_data = verify_token(token)
+                if token_data['valid']:
+                    user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (token_data['user_id'],))
+                    if user:
+                        language = user[0]['preferred_language']
+        
+        translations = get_translated_ui_labels(language)
+        return jsonify(translations), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

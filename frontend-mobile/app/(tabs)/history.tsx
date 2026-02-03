@@ -4,6 +4,7 @@ import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Calendar, ChevronRight, Search, Filter, History as HistoryIcon, LogIn } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 import api from '../../services/api';
 import { getLocalHistory } from '../../services/localHistory';
@@ -13,6 +14,7 @@ export default function HistoryScreen() {
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const { user, isGuest } = useAuth();
+    const { t } = useLanguage();
     const router = useRouter();
 
     useFocusEffect(
@@ -100,7 +102,7 @@ export default function HistoryScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Diagnosis History</Text>
+                <Text style={styles.title}>{t('diagnosis_history_title')}</Text>
                 <TouchableOpacity style={styles.searchButton}>
                     <Search size={22} color="#333" />
                 </TouchableOpacity>
@@ -123,10 +125,10 @@ export default function HistoryScreen() {
             ) : (
                 <View style={styles.emptyContainer}>
                     <HistoryIcon size={64} color="#eee" />
-                    <Text style={styles.emptyText}>No diagnoses yet</Text>
-                    <Text style={styles.emptySubtext}>Your past crop diagnoses will appear here.</Text>
+                    <Text style={styles.emptyText}>{t('no_diagnoses_found')}</Text>
+                    <Text style={styles.emptySubtext}>{t('history_empty_message')}</Text>
                     <TouchableOpacity style={styles.startButton} onPress={() => router.replace('/(tabs)')}>
-                        <Text style={styles.startButtonText}>Start New Diagnosis</Text>
+                        <Text style={styles.startButtonText}>{t('start_new_diagnosis_btn')}</Text>
                     </TouchableOpacity>
                 </View>
             )}
