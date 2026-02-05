@@ -14,7 +14,27 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from database.db_connection import db
 from config.settings import settings
 from services.language_service import translate_text
+from services.language_service import translate_text
 from api.routes.user import verify_token
+from utils.image_quality_check import check_image_quality
+from services.pesticide_service import get_severity_based_recommendations
+
+def log_debug(message):
+    try:
+        log_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'chatbot_debug.log')
+        with open(log_file, 'a') as f:
+            f.write(f"{datetime.now()}: {message}\n")
+    except Exception as e:
+        print(f"Logging failed: {e}")
+
+# Import ML prediction function
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ml'))
+try:
+    from final_predictor import full_prediction
+    ML_AVAILABLE = True
+except ImportError as e:
+    print(f"ML Import Error: {e}")
+    ML_AVAILABLE = False
 
 # Try to import Gemini, but make it optional
 try:
@@ -36,6 +56,54 @@ if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY:
         model = None
 else:
     model = None
+
+def identify_crop_from_image(image_path):
+    """
+    Identify if the image contains one of the supported crops.
+    Returns: 'tomato', 'rice', 'wheat', 'cotton', or None
+    """
+    global model
+    # Dynamic re-initialization to handle hot-reloaded env vars
+    if not model:
+        try:
+            from dotenv import load_dotenv
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
+            load_dotenv(env_path, override=True)
+            
+            api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            if GEMINI_AVAILABLE and api_key:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                log_debug("Gemini model successfully re-initialized with new key.")
+        except Exception as e:
+            log_debug(f"Model re-init failed: {e}")
+
+    if not model:
+        log_debug("Model is still None after re-init attempt.")
+        return None
+        
+    try:
+        import PIL.Image
+        img = PIL.Image.open(image_path)
+        
+        prompt = """
+        Analyze this image. Does it contain one of the following crops: Tomato, Rice, Wheat, Cotton?
+        If yes, respond with ONLY the crop name (Tomato, Rice, Wheat, or Cotton).
+        If it is a plant but not one of these, or if it is not a plant, respond with "None".
+        """
+        
+        response = model.generate_content([prompt, img])
+        text = response.text.strip().lower()
+        
+        if 'tomato' in text: return 'tomato'
+        if 'rice' in text: return 'rice'
+        if 'wheat' in text: return 'wheat'
+        if 'cotton' in text: return 'cotton'
+        
+        return None
+    except Exception as e:
+        print(f"Crop identification error: {e}")
+        return None
 
 def get_chatbot_response(message: str, language: str = 'en', context: str = '', image_path: str = None) -> str:
     """
@@ -127,11 +195,11 @@ def get_chatbot_response(message: str, language: str = 'en', context: str = '', 
             return answer
         except Exception as e:
             print(f"Gemini API error: {e}")
-            return get_fallback_response(message, language)
+            return get_fallback_response(message, language, context)
     else:
-        return get_fallback_response(message, language)
+        return get_fallback_response(message, language, context)
 
-def get_fallback_response(message: str, language: str = 'en') -> str:
+def get_fallback_response(message: str, language: str = 'en', context: str = '') -> str:
     """Enhanced fallback responses with agricultural knowledge"""
     message_lower = message.lower()
     
@@ -177,6 +245,11 @@ def get_fallback_response(message: str, language: str = 'en') -> str:
     else:
         response = responses['en']['default']
     
+    # Prioritize diagnosis context if available
+    if context and ("diagnosis system detected" in context or "User's current diagnosis" in context or "IMPORTANT" in context):
+         # If context is very specific/important, we might want to just return it or prepend it
+         response = context + "\n\n" + response
+
     # Translate if needed
     if language != 'en':
         print(f"DEBUG: Translating fallback response to {language}")
@@ -222,6 +295,7 @@ def send_message():
         language = 'en'  # Default language
         
         auth_header = request.headers.get('Authorization')
+        log_debug(f"Received message request. Content-Type: {request.content_type}")
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]
             token_data = verify_token(token)
@@ -298,6 +372,109 @@ def send_message():
                     context = f"User's recent diagnosis: {d['crop']} with {d['disease']} at {d['severity_percent']}% severity."
             except Exception as e:
                 print(f"Error fetching context: {e}")
+
+        log_debug(f"Before diagnosis check. File: {file_path}, ML: {ML_AVAILABLE}, Exists: {os.path.exists(file_path) if file_path else False}")
+        if file_path and ML_AVAILABLE and os.path.exists(file_path):
+            print(f"DEBUG: Processing image for crop diagnosis: {file_path}")
+            
+            # 1. Identify Crop
+            identified_crop = None
+            supported_crops = ['tomato', 'rice', 'wheat', 'cotton']
+            
+            # Check message for explicit crop mention
+            message_lower = message.lower()
+            for crop in supported_crops:
+                if crop in message_lower:
+                    identified_crop = crop
+                    print(f"DEBUG: Identified crop from message: {identified_crop}")
+                    break
+            
+            # Fallback to visual identification
+            if not identified_crop:
+                identified_crop = identify_crop_from_image(file_path)
+                if identified_crop:
+                     print(f"DEBUG: Identified crop from image: {identified_crop}")
+            
+            print(f"DEBUG: Final identified crop: {identified_crop}")
+            log_debug(f"Identified crop: {identified_crop}")
+            
+            if identified_crop:
+                try:
+                    # 2. Perform Disease Detection
+                    prediction_result = full_prediction(file_path, identified_crop)
+                    print(f"DEBUG: Prediction result: {prediction_result}")
+                    
+                    # 3. Get Recommendations
+                    pesticide_recommendations = get_severity_based_recommendations(
+                        prediction_result['disease'],
+                        prediction_result['severity_percent'],
+                        identified_crop
+                    )
+                    
+                    # 4. Save to History (if user logged in)
+                    if user_id:
+                        diagnosis_id = db.execute_insert(
+                            '''INSERT INTO diagnosis_history 
+                               (user_id, crop, disease, confidence, severity_percent, stage, image_path, created_at)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                            (
+                                user_id,
+                                identified_crop,
+                                prediction_result['disease'],
+                                prediction_result['confidence'],
+                                prediction_result['severity_percent'],
+                                prediction_result['stage'],
+                                file_path,
+                                datetime.now()
+                            )
+                        )
+                        
+                        # Save pesticides
+                        for pesticide in pesticide_recommendations.get('recommended_pesticides', [])[:3]:
+                            db.execute_insert(
+                                '''INSERT INTO pesticide_recommendations 
+                                   (diagnosis_id, pesticide_name, dosage, frequency, cost_per_unit, is_organic, warnings)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                                (
+                                    diagnosis_id,
+                                    pesticide['name'],
+                                    pesticide['dosage_per_acre'],
+                                    pesticide['frequency'],
+                                    pesticide['cost_per_liter'],
+                                    pesticide['is_organic'],
+                                    pesticide['warnings']
+                                )
+                            )
+                            
+                    # Format disease name for better translation
+                    raw_disease = prediction_result['disease']
+                    readable_disease = raw_disease.replace('___', ' - ').replace('_', ' ')
+                    
+                    # 5. Update Context for Chatbot
+                    context = (
+                        f"IMPORTANT: The user just uploaded an image of a {identified_crop} plant. "
+                        f"My diagnosis system detected: {readable_disease} "
+                        f"with {prediction_result['severity_percent']}% severity (Stage: {prediction_result['stage']}). "
+                        f"Confidence: {prediction_result['confidence']}%. "
+                        f"Please explain this diagnosis to the user and suggest treatments based on this specific result."
+                    )
+                    
+                    # Add specific recommendations to context
+                    if pesticide_recommendations.get('recommended_pesticides'):
+                        rec = pesticide_recommendations['recommended_pesticides'][0]
+                        context += f" Recommended treatment: {rec['name']} ({rec['dosage_per_acre']})."
+                        
+                except Exception as e:
+                    print(f"Auto-diagnosis error: {e}")
+                    # Continue without diagnosis context if it fails
+            else:
+                 print("DEBUG: Could not identify a supported crop.")
+                 context = (
+                     "SYSTEM NOTICE: The user uploaded an image, but I could not automatically identify the crop. "
+                     "This might be because the image is unclear, not a supported crop (Tomato, Rice, Wheat, Cotton), "
+                     "or the diagnosis system (Gemini API) is not configured. "
+                     "Please ask the user to specify which crop this is."
+                 )
 
         # Get chatbot response (passing image_path)
         response_text = get_chatbot_response(message, language, context, file_path)
