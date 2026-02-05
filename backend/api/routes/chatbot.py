@@ -24,6 +24,21 @@ except ImportError:
     GEMINI_AVAILABLE = False
     genai = None
 
+# Try to import Local ML Models
+try:
+    # Ensure correct path for ML models
+    ml_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ml')
+    if ml_path not in sys.path:
+        sys.path.append(ml_path)
+        
+    from final_predictor import full_prediction
+    ML_AVAILABLE = True
+    print("DEBUG: Local ML models loaded successfully")
+except ImportError as e:
+    ML_AVAILABLE = False
+    full_prediction = None
+    print(f"DEBUG: Local ML models not available: {e}")
+
 chatbot_bp = Blueprint('chatbot', __name__)
 
 # Configure Gemini API (if available)
@@ -31,11 +46,87 @@ if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY:
     try:
         genai.configure(api_key=settings.GOOGLE_GEMINI_API_KEY)
         # Use a multimodal model
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
     except:
         model = None
 else:
     model = None
+
+
+def identify_crop_from_image(image_path):
+    """
+    Identify if the image contains one of the supported crops.
+    Returns: 'tomato', 'rice', 'wheat', 'cotton', or None
+    """
+    global model
+    # Dynamic re-initialization to handle hot-reloaded env vars
+    if not model:
+        try:
+            from dotenv import load_dotenv
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
+            load_dotenv(env_path, override=True)
+            
+            api_key = os.getenv('GOOGLE_GEMINI_API_KEY')
+            if GEMINI_AVAILABLE and api_key:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-2.0-flash')
+            print("Gemini model successfully re-initialized with new key.")
+        except Exception as e:
+            print(f"Model re-init failed: {e}")
+
+    if not model:
+        print("Model is still None after re-init attempt.")
+        return None
+        
+    try:
+        import PIL.Image
+        img = PIL.Image.open(image_path)
+        
+        prompt = """
+        Analyze this image. Does it contain one of the following crops: Tomato, Rice, Wheat, Cotton?
+        If yes, respond with ONLY the crop name (Tomato, Rice, Wheat, or Cotton).
+        If it is a plant but not one of these, or if it is not a plant, respond with "None".
+        """
+        
+        response = model.generate_content([prompt, img])
+        text = response.text.strip().lower()
+        print(f"DEBUG: Raw Gemini Crop ID Response: '{text}'")
+        
+        if 'tomato' in text: return 'tomato'
+        if 'rice' in text: return 'rice'
+        if 'wheat' in text: return 'wheat'
+        if 'cotton' in text: return 'cotton'
+        
+        return None
+    except Exception as e:
+        print(f"Crop identification error (Gemini): {e}")
+        # Fallback to Brute Force Local Identification
+        if ML_AVAILABLE:
+            print("Attempting local brute-force identification...")
+            supported_crops = ['tomato', 'rice', 'wheat', 'cotton']
+            best_crop = None
+            max_conf = 0.0
+            
+            for crop in supported_crops:
+                try:
+                    # We need to suppress printing from full_prediction to avoid clutter logs
+                    # But full_prediction prints to stdout, so we just call it.
+                    result = full_prediction(image_path, crop)
+                    conf = result.get('confidence', 0)
+                    print(f"Local check {crop}: {conf}%")
+                    
+                    if conf > max_conf:
+                        max_conf = conf
+                        best_crop = crop
+                except Exception as ml_err:
+                    print(f"Local check failed for {crop}: {ml_err}")
+            
+            # Threshold for acceptance (e.g. 50%)
+            if best_crop and max_conf > 50:
+                print(f"Local identification success: {best_crop} ({max_conf}%)")
+                return best_crop
+                
+        return None
 
 def get_chatbot_response(message: str, language: str = 'en', context: str = '', image_path: str = None) -> str:
     """
@@ -118,7 +209,8 @@ def get_chatbot_response(message: str, language: str = 'en', context: str = '', 
             
             # Get response from Gemini
             response = model.generate_content(content_parts)
-            answer = response.text
+            answer = response.text.strip()
+            print(f"DEBUG: Raw Gemini Crop ID Response: '{answer.lower()}'")
             
             # Translate response back to user's language
             if language != 'en':
@@ -127,11 +219,11 @@ def get_chatbot_response(message: str, language: str = 'en', context: str = '', 
             return answer
         except Exception as e:
             print(f"Gemini API error: {e}")
-            return get_fallback_response(message, language)
+            return get_fallback_response(message, language, context)
     else:
-        return get_fallback_response(message, language)
+        return get_fallback_response(message, language, context)
 
-def get_fallback_response(message: str, language: str = 'en') -> str:
+def get_fallback_response(message: str, language: str = 'en', context: str = '') -> str:
     """Enhanced fallback responses with agricultural knowledge"""
     message_lower = message.lower()
     
@@ -177,6 +269,10 @@ def get_fallback_response(message: str, language: str = 'en') -> str:
     else:
         response = responses['en']['default']
     
+    # Prioritize diagnosis context if available
+    if context and ("diagnosis system detected" in context or "User's current diagnosis" in context or "IMPORTANT" in context):
+         response = context + "\n\n" + response
+
     # Translate if needed
     if language != 'en':
         print(f"DEBUG: Translating fallback response to {language}")
@@ -284,6 +380,34 @@ def send_message():
              except:
                  pass
         
+        # 4. Auto-detect Crop & Disease from Image if Context is Missing
+        if not context and file_path and os.path.exists(file_path):
+            print(f"DEBUG: Attempting auto-identification for {file_path}")
+            identified_crop = identify_crop_from_image(file_path)
+            
+            if identified_crop:
+                 print(f"DEBUG: Auto-identified crop: {identified_crop}")
+                 # Run full prediction
+                 if ML_AVAILABLE and full_prediction:
+                     try:
+                        prediction_result = full_prediction(file_path, identified_crop)
+                        print(f"DEBUG: Prediction result: {prediction_result}")
+                        
+                        # Format disease name for better translation (replace underscores)
+                        disease_display = prediction_result['disease'].replace('___', ' - ').replace('_', ' ')
+                        
+                        context = (
+                            f"IMPORTANT: The user just uploaded an image of a {identified_crop} plant. "
+                            f"My diagnosis system detected: {disease_display} "
+                            f"with {prediction_result['severity_percent']}% severity (Stage: {prediction_result['stage']}). "
+                            f"Confidence: {prediction_result['confidence']}%. "
+                            f"Please explain this diagnosis to the user and suggest treatments based on this specific result."
+                        )
+                     except Exception as e:
+                         print(f"DEBUG: Prediction failed after identification: {e}")
+            else:
+                 print("DEBUG: Could not identify crop from image.")
+
         if not context and user_id:
              # Logged-in user - get from database
             try:
