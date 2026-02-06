@@ -23,8 +23,13 @@ export default function LoginScreen() {
 
         setLoading(true);
         try {
+            // Ask the server to check the credentials
             const response = await api.post('/user/login', { email, password });
+
+            // If correct, save the user info and token (the VIP pass)
             await signIn(response.data.token, response.data.user);
+
+            // Go to the main dashboard
             router.replace('/(tabs)');
         } catch (error: any) {
             const message = error.response?.data?.error || t('loginErrorInvalid');
@@ -84,6 +89,7 @@ export default function LoginScreen() {
                         )}
                     </TouchableOpacity>
 
+                    {/* Guest Access Button: For users who just want to try it out first */}
                     <TouchableOpacity
                         style={styles.guestButton}
                         onPress={() => {

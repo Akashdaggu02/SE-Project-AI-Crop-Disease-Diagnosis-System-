@@ -13,7 +13,7 @@ def check_image_quality(image_path: str) -> Dict[str, any]:
         Dictionary with quality metrics and pass/fail status
     """
     try:
-        # Read image
+        
         img = cv2.imread(image_path)
         
         if img is None:
@@ -23,7 +23,7 @@ def check_image_quality(image_path: str) -> Dict[str, any]:
                 'quality_score': 0.0
             }
         
-        # Check image size
+        
         height, width = img.shape[:2]
         
         if width < 100 or height < 100:
@@ -42,39 +42,39 @@ def check_image_quality(image_path: str) -> Dict[str, any]:
                 'dimensions': (width, height)
             }
         
-        # Calculate blur score using Laplacian variance
+        
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
         
-        # Normalize blur score (higher is sharper)
-        # Typical values: <100 = very blurry, 100-500 = acceptable, >500 = sharp
+        
+        
         blur_score = min(laplacian_var / 500.0, 1.0)
         
-        # Calculate brightness score
+        
         brightness = np.mean(gray)
-        # Ideal brightness is around 127 (middle gray)
+        
         brightness_score = 1.0 - abs(brightness - 127) / 127.0
         
-        # Calculate contrast score
+        
         contrast = np.std(gray)
-        # Normalize contrast (higher is better, typical range 0-100)
+        
         contrast_score = min(contrast / 50.0, 1.0)
         
-        # Calculate overall quality score (weighted average)
+        
         quality_score = (
-            blur_score * 0.5 +        # Blur is most important
-            brightness_score * 0.25 +  # Brightness matters
-            contrast_score * 0.25      # Contrast helps
+            blur_score * 0.5 +        
+            brightness_score * 0.25 +  
+            contrast_score * 0.25      
         )
         
-        # Determine if image passes quality check
-        # Relaxed thresholds for real-world mobile photos
-        # Reduced thresholds significantly based on user feedback (variance ~5-8 was being rejected)
+        
+        
+        
         min_quality_threshold = 0.15
-        min_blur_threshold = 0.01 # Very low, accepts almost anything focused-ish
+        min_blur_threshold = 0.01 
         is_valid = quality_score >= min_quality_threshold and blur_score >= min_blur_threshold
         
-        # Log quality metrics for debugging
+        
         print(f"DEBUG: Image quality check - Quality: {quality_score:.3f}, Blur: {blur_score:.3f}, "
               f"Brightness: {brightness_score:.3f}, Contrast: {contrast_score:.3f}, "
               f"Valid: {is_valid}")
@@ -144,27 +144,27 @@ def enhance_image_quality(image_path: str, output_path: str = None) -> str:
     """
     img = cv2.imread(image_path)
     
-    # Convert to LAB color space
+    
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
     
-    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
+    
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
     l = clahe.apply(l)
     
-    # Merge channels
+    
     enhanced_lab = cv2.merge([l, a, b])
     
-    # Convert back to BGR
+    
     enhanced = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
     
-    # Apply slight sharpening
+    
     kernel = np.array([[-1, -1, -1],
                        [-1,  9, -1],
                        [-1, -1, -1]])
     enhanced = cv2.filter2D(enhanced, -1, kernel)
     
-    # Save enhanced image
+    
     if output_path is None:
         output_path = image_path.replace('.', '_enhanced.')
     
@@ -182,42 +182,42 @@ def check_content_validity(image_path: str) -> Dict[str, any]:
         if img is None:
             return {'is_valid': False, 'reason': 'Unable to read image'}
 
-        # Convert to HSV
+        
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         
-        # Calculate total pixels
+        
         total_pixels = img.shape[0] * img.shape[1]
         
-        # Define color ranges for plants (Green, Yellow, Brown)
-        # Note: HSV ranges in OpenCV are H: 0-179, S: 0-255, V: 0-255
         
-        # 1. Green Range (Broad)
+        
+        
+        
         lower_green = np.array([25, 30, 30])
         upper_green = np.array([95, 255, 255])
         mask_green = cv2.inRange(hsv, lower_green, upper_green)
         
-        # 2. Yellow/Brown Range (Diseased parts)
+        
         lower_yellow = np.array([10, 30, 30])
         upper_yellow = np.array([35, 255, 255])
         mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
         
-        # 3. Brown/Soil Range (approximate, often low Saturation, Red/Orange Hue)
+        
         lower_brown = np.array([0, 20, 20])
         upper_brown = np.array([20, 200, 150])
         mask_brown = cv2.inRange(hsv, lower_brown, upper_brown)
         
-        # Combine masks
+        
         combined_mask = cv2.bitwise_or(mask_green, mask_yellow)
         combined_mask = cv2.bitwise_or(combined_mask, mask_brown)
         
-        # Count plant pixels
+        
         plant_pixels = cv2.countNonZero(combined_mask)
         plant_ratio = plant_pixels / total_pixels
         
         print(f"DEBUG: Plant pixel ratio: {plant_ratio:.3f}")
         
-        # Threshold: At least 15% of the image should be plant-like colors
-        # This allows for backgrounds but rejects completely irrelevant images
+        
+        
         min_plant_ratio = 0.15
         
         if plant_ratio < min_plant_ratio:
@@ -235,5 +235,5 @@ def check_content_validity(image_path: str) -> Dict[str, any]:
 
     except Exception as e:
         print(f"Error in content check: {e}")
-        # Default to valid if check fails to avoid blocking valid images on technicality
+        
         return {'is_valid': True, 'reason': 'Content check passed (fallback)'}

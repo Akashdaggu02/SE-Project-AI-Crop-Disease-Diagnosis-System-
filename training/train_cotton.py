@@ -6,16 +6,19 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define Constants
-IMAGE_SIZE = (300, 300) # User snippet used (img_h, img_w) variables but defined 300
+# --- Configuration ---
+# Cotton model uses slightly larger images (300x300) for better detail
+IMAGE_SIZE = (300, 300) 
 BATCH_SIZE = 32
 EPOCHS = 20
 DATASET_DIR = os.path.join('dataset', 'cotton')
 MODELS_DIR = 'models'
 
+# Ensure the model directory exists
 if not os.path.exists(MODELS_DIR):
     os.makedirs(MODELS_DIR)
 
+# --- Data Verification ---
 print(f"Checking dataset at {DATASET_DIR}...")
 train_dir = os.path.join(DATASET_DIR, 'train')
 val_dir = os.path.join(DATASET_DIR, 'val')
@@ -24,31 +27,16 @@ if not os.path.exists(train_dir) or not os.path.exists(val_dir):
     print(f"Error: Train/Val directories not found in {DATASET_DIR}")
     exit(1)
 
-# Data Augmentation & Loading
-print("Setting up Data Generators...")
-datagen = ImageDataGenerator(
-    rescale = 1./255,
-    horizontal_flip = True,
-    vertical_flip = True,
-    # validation_split = 0.2 # User snippet used validation_split on a single dir, 
-                             # but here we have separate 'train' and 'val' dirs usually?
-                             # Let's check. list_dir showed 'train' and 'val' folders.
-                             # User snippet flow_from_directory used '/content/drive/My Drive/data/train' for training
-                             # and '/content/drive/My Drive/data/val' for validation.
-                             # So I should simply use flow_from_directory on train_dir and val_dir directly 
-                             # without 'subset' if they are separate folders.
-                             # However, user snippet used 'subset' arguments. 
-                             # "train = datagen.flow_from_directory(..., subset='training')"
-                             # "valid = datagen.flow_from_directory(..., subset='validation')"
-                             # BUT they pointed to DIFFERENT directories in the snippet: 'data/train' and 'data/val'.
-                             # That is contradictory usage of ImageDataGenerator if they are separate folders. 
-                             # Usually validation_split is used when you have ONE folder.
-                             # If I have split folders, I don't need validation_split in ImageDataGenerator 
-                             # UNLESS I want to further split train?
-                             # I will assume standard structure: train_dir is for training, val_dir is for validation.
-                             # I will remove 'subset' and 'validation_split' to be safe and standard.
-)
 
+# --- Data Preparation ---
+print("Setting up Data Generators...")
+# Data Augmentation helps the model learn to recognize cotton diseases
+# even if the photo is flipped or not perfectly aligned
+datagen = ImageDataGenerator(
+    rescale = 1./255,           # Convert pixel numbers to 0-1
+    horizontal_flip = True,     # Flip sideways
+    vertical_flip = True,       # Flip upside down
+)
 
 print("Loading Training Data...")
 train_generator = datagen.flow_from_directory(
@@ -72,26 +60,25 @@ num_classes = train_generator.num_classes
 print(f"Number of classes: {num_classes}")
 print(f"Class indices: {train_generator.class_indices}")
 
-# Model Building (ResNet152V2)
+
+# --- Model Architecture (Transfer Learning) ---
 print("Building ResNet152V2 Model...")
+# We use ResNet152V2, a very deep and rigorous network
 in_layer = layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
 resnet = ResNet152V2(include_top=False, weights='imagenet', input_tensor=in_layer)
 
-# Freeze layers
+# Freeze the ResNet layers so we don't accidentally wreck the pre-trained weights
 for layer in resnet.layers:
     layer.trainable = False
 
-# Custom Head
-# User snippet had bug: "inter = tf.keras.layers.GlobalMaxPooling2D()(xception.output)"
-# Fixed to use resnet.output
+# Add our custom classification head
 x = layers.GlobalMaxPooling2D()(resnet.output)
 x = layers.Flatten()(x)
-# User had Dense(4), we use Dense(num_classes)
-output = layers.Dense(num_classes, activation='softmax')(x)
+output = layers.Dense(num_classes, activation='softmax')(x) # Final answer
 
 model = models.Model(inputs=resnet.inputs, outputs=output)
 
-# LR Scheduler
+# Learning Rate Scheduler: Slow down the learning as we get closer to the solution
 initial_lr = 0.01
 lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
     initial_lr,
@@ -100,25 +87,28 @@ lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
     staircase=True
 )
 
-# Optimizer
 optim = tf.keras.optimizers.Adam(learning_rate=lr_scheduler)
 
 model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-# Callbacks
+
+# --- Callbacks ---
+# Stop early if we stop improving (saves time)
+# AND save the best version of the model automatically
 callbacks = [
     tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', mode='max', patience=10, verbose=1),
     tf.keras.callbacks.ModelCheckpoint(
         os.path.join(MODELS_DIR, 'cotton_best_model.h5'), 
         monitor='val_accuracy', 
         mode='max', 
-        save_weights_only=False, # Saving full model is usually better/easier for loading later
+        save_weights_only=False, 
         save_best_only=True,
         verbose=1
     )
 ]
 
+# --- Training ---
 print(f"Starting training for {EPOCHS} epochs...")
 history = model.fit(
     train_generator,
@@ -129,13 +119,14 @@ history = model.fit(
     verbose=1
 )
 
-# Save Final Model
+# --- Saving Final Model ---
 model_name = 'cotton_disease_model.h5'
 model_path = os.path.join(MODELS_DIR, model_name)
 model.save(model_path)
 print(f"Model saved to {model_path}")
 
-# Plotting
+
+# --- Plotting Results ---
 try:
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']

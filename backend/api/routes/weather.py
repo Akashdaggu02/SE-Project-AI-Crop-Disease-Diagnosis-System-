@@ -16,7 +16,7 @@ def get_weather():
         weather_data = get_weather_data(latitude, longitude)
         
         if not weather_data:
-            # Return default data if weather service fails
+            
             return jsonify({
                 'temperature': 28,
                 'humidity': 60,
@@ -26,7 +26,7 @@ def get_weather():
                 'location': 'Your Location'
             }), 200
         
-        # Add location name (you can enhance this with reverse geocoding)
+        
         weather_data['location'] = 'Your Location'
         
         return jsonify(weather_data), 200

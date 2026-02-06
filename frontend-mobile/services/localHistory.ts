@@ -1,22 +1,20 @@
 
 import { Platform } from 'react-native';
 
-// For web compatibility if we needed AsyncStorage we could use it, but let's stick to the pattern in storage.ts
-// or simple localStorage for web.
-
+// For guest users, we just save their history on their own device.
+// We use a temporary variable for mobile (simple session) or SessionStorage for web.
 const HISTORY_KEY = 'guest_diagnosis_history';
 
-// Helper to interact with storage
-// In-memory store for native session (cleared when app is killed)
+// A temporary place to keep history while the app is open (for non-web platforms)
 let tempHistoryStore: string | null = null;
 
-// Helper to interact with storage
+
 const getStorage = async () => {
     if (Platform.OS === 'web') {
-        // Use sessionStorage instead of localStorage for session-only persistence
+        // web browser memory
         return sessionStorage.getItem(HISTORY_KEY);
     } else {
-        // Return in-memory variable for native
+        // app memory
         return tempHistoryStore;
     }
 };
@@ -37,9 +35,12 @@ export interface LocalHistoryItem {
     severity_percent: number;
     stage: string;
     created_at: string;
-    fullData?: any; // Store full response to avoid re-fetching since backend doesn't have it
+    fullData?: any;
 }
 
+/**
+ * Fetch the list of past checkups from the local memory.
+ */
 export const getLocalHistory = async (): Promise<LocalHistoryItem[]> => {
     try {
         const json = await getStorage();
@@ -51,12 +52,16 @@ export const getLocalHistory = async (): Promise<LocalHistoryItem[]> => {
     }
 };
 
+/**
+ * Save a new checkup result to the local memory.
+ * We only keep the last 20 to save space.
+ */
 export const addToLocalHistory = async (diagnosisResult: any, crop: string) => {
     try {
         const history = await getLocalHistory();
 
         const newItem: LocalHistoryItem = {
-            id: Date.now(), // Generate a local ID
+            id: Date.now(),
             crop: crop,
             disease: diagnosisResult.prediction.disease,
             confidence: diagnosisResult.prediction.confidence,
@@ -68,7 +73,7 @@ export const addToLocalHistory = async (diagnosisResult: any, crop: string) => {
 
         const updatedHistory = [newItem, ...history];
 
-        // Limit to last 20 items to save space
+        // Limit the history list to 20 items
         if (updatedHistory.length > 20) {
             updatedHistory.length = 20;
         }
@@ -80,6 +85,9 @@ export const addToLocalHistory = async (diagnosisResult: any, crop: string) => {
     }
 };
 
+/**
+ * Wipe the memory clean (like when the user leaves).
+ */
 export const clearLocalHistory = async () => {
     if (Platform.OS === 'web') {
         sessionStorage.removeItem(HISTORY_KEY);

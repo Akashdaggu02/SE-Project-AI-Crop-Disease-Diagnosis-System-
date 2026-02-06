@@ -25,6 +25,7 @@ export default function RegisterScreen() {
 
         setLoading(true);
         try {
+            // Create a new account on the server
             const response = await api.post('/user/register', {
                 email,
                 password,
@@ -32,6 +33,8 @@ export default function RegisterScreen() {
                 farm_size: farmSize ? parseFloat(farmSize) : 0,
                 preferred_language: 'en'
             });
+
+            // Log them in automatically right after signup
             await signIn(response.data.token, response.data.user);
             router.replace('/(tabs)');
         } catch (error: any) {

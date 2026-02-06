@@ -9,7 +9,6 @@ import CostCalculator from '../components/CostCalculator';
 import ProgressionIndicator from '../components/ProgressionIndicator';
 import api from '../services/api';
 
-
 import { useLanguage } from '../context/LanguageContext';
 
 export default function ResultsScreen() {
@@ -32,6 +31,7 @@ export default function ResultsScreen() {
         };
     }, [data]);
 
+    // This function plays the "AI Doctor's" voice explanation
     const playVoice = async () => {
         if (!result?.voice_file) return;
 
@@ -46,6 +46,8 @@ export default function ResultsScreen() {
                 }
                 return;
             }
+            // ... (setup new sound)
+
 
             setIsPlaying(true);
             const { sound: newSound } = await Audio.Sound.createAsync(
@@ -80,27 +82,30 @@ export default function ResultsScreen() {
 
     const { prediction, disease_info, pesticide_recommendations, weather_advice } = result;
     const scanLanguage = result.language || 'en';
-    // Only use backend labels if they match the current UI language preference
+
+    // We try to show translations from the server if they match the current app language,
+    // otherwise we fall back to our local translations.
     const labels = (scanLanguage === language) ? (result.ui_translations || {}) : {};
 
-    // For disease name: use translated version or translate the key
+    // Make the disease name look nice (remove underscores)
     let displayDisease = prediction.disease_local || prediction.disease.replace(/___/g, ': ').replace(/_/g, ' ');
     if (prediction.disease === 'Healthy' && !prediction.disease_local) {
         displayDisease = t('healthy');
     }
 
-    // For stage: use translated version or translate the key
+
     let displayStage = prediction.stage_local || prediction.stage;
     if (prediction.stage === 'Healthy Stage' && !prediction.stage_local) {
         displayStage = t('healthyStage');
     } else if (prediction.stage && !prediction.stage_local) {
-        // Translate stage keys like "Early Stage", "Moderate Stage", "Severe Stage"
+        // Try to translate the stage key (e.g., 'early', 'late')
         const stageKey = prediction.stage.toLowerCase().replace(' ', '_');
         displayStage = t(stageKey as any) || prediction.stage;
     }
 
     return (
         <ScrollView style={styles.container}>
+            {/* Status Banner: Green for Good, Orange for Warning */}
             <View style={[styles.statusBanner, { backgroundColor: prediction.confidence > 80 ? '#e8f5e9' : '#fff3e0' }]}>
                 {prediction.confidence > 80 ? (
                     <ShieldCheck color="#2e7d32" size={24} />
@@ -114,6 +119,7 @@ export default function ResultsScreen() {
                 </Text>
             </View>
 
+            {/* Core Diagnosis Info */}
             <View style={styles.section}>
                 <View style={styles.titleRow}>
                     <Text style={styles.cropTitle}>
@@ -142,7 +148,7 @@ export default function ResultsScreen() {
                 </View>
             </View>
 
-            {/* Disease Progression Indicator */}
+            { }
             {prediction.disease !== 'Healthy' && (
                 <View style={{ paddingHorizontal: 20 }}>
                     <ProgressionIndicator
@@ -206,7 +212,7 @@ export default function ResultsScreen() {
                         ))}
                     </View>
 
-                    {/* Cost Calculator */}
+                    { }
                     <View style={{ paddingHorizontal: 20 }}>
                         <CostCalculator
                             pesticides={pesticide_recommendations.recommended_pesticides}

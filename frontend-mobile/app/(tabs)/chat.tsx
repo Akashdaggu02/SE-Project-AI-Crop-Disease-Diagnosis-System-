@@ -27,6 +27,7 @@ export default function ChatScreen() {
     const { user, isGuest } = useAuth();
     const flatListRef = useRef<FlatList>(null);
 
+    // If a registered user logs in, load their past conversation
     useEffect(() => {
         if (!isGuest && user) {
             fetchChatHistory();
@@ -37,6 +38,7 @@ export default function ChatScreen() {
         try {
             const response = await api.get('/chatbot/history');
             if (response.data.length > 0) {
+                // Transform server data into our message format
                 const historyMessages = response.data.flatMap((chat: any) => [
                     {
                         id: `user-${chat.id}`,
@@ -61,6 +63,7 @@ export default function ChatScreen() {
     const handleSend = async () => {
         if (!inputText.trim() || loading) return;
 
+        // 1. Show user's message immediately
         const userMessage: Message = {
             id: Date.now().toString(),
             text: inputText.trim(),
@@ -73,11 +76,13 @@ export default function ChatScreen() {
         setLoading(true);
 
         try {
+            // 2. Send to the AI
             const response = await api.post('/chatbot/message', {
                 message: userMessage.text,
-                language: language  // Send current language
+                language: language
             });
 
+            // 3. Show AI's response
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 text: response.data.response,

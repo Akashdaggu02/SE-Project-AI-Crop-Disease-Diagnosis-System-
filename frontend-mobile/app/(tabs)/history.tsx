@@ -28,6 +28,7 @@ export default function HistoryScreen() {
     const { t } = useLanguage();
     const router = useRouter();
 
+    // Reload history whenever this screen is looked at
     useFocusEffect(
         useCallback(() => {
             fetchHistory();
@@ -38,9 +39,11 @@ export default function HistoryScreen() {
         setLoading(true);
         try {
             if (isGuest) {
+                // Guests see history from their local device storage
                 const localData = await getLocalHistory();
                 setHistory(localData);
             } else if (user) {
+                // Logged-in users pull from the server
                 const response = await api.get('/diagnosis/history');
                 setHistory(response.data);
             }
@@ -58,6 +61,7 @@ export default function HistoryScreen() {
 
     const handleItemPress = async (id: string | number) => {
         if (isGuest) {
+            // For guests, we pass the saved data directly
             const item = history.find((h) => h.id === id);
             if (item && item.fullData) {
                 router.push({

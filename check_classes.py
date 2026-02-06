@@ -9,7 +9,7 @@ for crop in crops:
         print(f"MISSING: {crop}")
         continue
     
-    # Check for train/test structure (case insensitive)
+    
     subdirs = os.listdir(path)
     train_dir = next((d for d in subdirs if d.lower() == 'train'), None)
     
@@ -17,7 +17,7 @@ for crop in crops:
         path = os.path.join(path, train_dir)
         subdirs = os.listdir(path)
     
-    # Filter only directories
+    
     classes = [d for d in subdirs if os.path.isdir(os.path.join(path, d))]
     classes.sort()
     

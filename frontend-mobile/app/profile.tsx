@@ -42,17 +42,23 @@ export default function ProfileScreen() {
         );
     };
 
+    /**
+     * Change Language Strategy:
+     * 1. Update the app state instantly (so the UI changes).
+     * 2. If logged in, tell the server (sync).
+     * 3. Show a nice success message.
+     */
     const changeLanguage = async (code: string) => {
         try {
-            // Optimistically update language
             console.log('User selected language:', code);
+            // Update the app's language setting
             setLanguage(code as any);
             setShowLanguagePicker(false);
 
             if (!isGuest && user) {
                 console.log('Syncing language with backend...');
                 await api.put('/user/language', { language: code });
-                // Update user context with new language
+
                 await updateUser({ preferred_language: code });
                 console.log('Backend sync successful');
             }
@@ -60,14 +66,14 @@ export default function ProfileScreen() {
             Alert.alert(t('success'), `${t('languageChanged')} ${LANGUAGES.find(l => l.code === code)?.name}`);
         } catch (error) {
             console.error('Failed to update language on backend', error);
-            // Optional: revert language if strict sync is required, but for now keep local preference
-            // setLanguage(user?.preferred_language as any || 'en'); 
+            // Even if the server fails, we keep the local change so the user isn't stuck
             Alert.alert(t('error'), t('failedUpdate'));
         }
     };
 
     return (
         <ScrollView style={styles.container}>
+            {/* Header: Avatar & Name */}
             <View style={styles.profileHeader}>
                 <View style={styles.avatarCircle}>
                     <User size={40} color="#4caf50" />
@@ -82,9 +88,11 @@ export default function ProfileScreen() {
                 )}
             </View>
 
+            {/* Settings Section */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{t('preferences')}</Text>
 
+                {/* Language Picker Toggle */}
                 <TouchableOpacity style={styles.menuItem} onPress={() => setShowLanguagePicker(!showLanguagePicker)}>
                     <View style={styles.menuIconCircle}>
                         <Languages size={20} color="#4caf50" />
@@ -96,6 +104,7 @@ export default function ProfileScreen() {
                     <ChevronRight size={20} color="#ccc" />
                 </TouchableOpacity>
 
+                {/* Dropdown for Languages */}
                 {showLanguagePicker && (
                     <View style={styles.languageGrid}>
                         {LANGUAGES.map((lang) => (
@@ -128,6 +137,7 @@ export default function ProfileScreen() {
                 </View>
             </View>
 
+            {/* Legal & Help */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{t('supportLegal')}</Text>
 

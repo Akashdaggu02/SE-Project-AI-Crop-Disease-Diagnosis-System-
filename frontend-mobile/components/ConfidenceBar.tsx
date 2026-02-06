@@ -7,6 +7,12 @@ interface ConfidenceBarProps {
     label?: string;
 }
 
+/**
+ * A colorful bar showing how sure the AI is about its guess.
+ * Green = Very sure
+ * Yellow = Pretty sure
+ * Red = Not so sure (might be wrong)
+ */
 const ConfidenceBar: React.FC<ConfidenceBarProps> = ({ confidence, label }) => {
     const { t } = useLanguage();
 

@@ -3,52 +3,61 @@ from flask_cors import CORS
 import os
 import sys
 
-# Add paths
+# Ensure Python can find our other files by adding the project root to the path
 sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+# Load our app settings and database connection
 from config.settings import settings
 from database.db_connection import db
 
-# Import blueprints
+# Bring in the different parts of our API (Blueprints)
 from api.routes.user import user_bp
 from api.routes.diagnosis import diagnosis_bp
 from api.routes.cost import cost_bp
 from api.routes.chatbot import chatbot_bp
 from api.routes.weather import weather_bp
 
-# Create Flask app
+
+# Initialize the Flask application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = settings.SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = settings.MAX_CONTENT_LENGTH
 
-# Enable CORS
+
+# Enable CORS so our mobile app can talk to this server without issues
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Initialize app directories
+
+# Start up the settings (like creating folders)
 settings.init_app()
 
-# Register blueprints
+
+# Register the blueprints - these are like mini-apps for each feature
 app.register_blueprint(user_bp, url_prefix='/api/user')
 app.register_blueprint(diagnosis_bp, url_prefix='/api/diagnosis')
 app.register_blueprint(cost_bp, url_prefix='/api/cost')
 app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
 app.register_blueprint(weather_bp, url_prefix='/api/weather')
 
-# Error handlers
+
+# If a page isn't found, tell the user politely
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404
 
+# If the server breaks, admit it
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
+# If the uploaded file is too big, warn them
 @app.errorhandler(413)
 def file_too_large(error):
     return jsonify({'error': 'File too large. Maximum size is 16MB'}), 413
 
-# Health check endpoint
+
+# A simple health check to see if the server is running
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
@@ -57,7 +66,8 @@ def health_check():
         'version': '1.0.0'
     }), 200
 
-# API info endpoint
+
+# Provide information about available API endpoints
 @app.route('/api', methods=['GET'])
 def api_info():
     return jsonify({
@@ -90,6 +100,7 @@ def api_info():
         'supported_languages': ['en', 'hi', 'te', 'ta', 'kn', 'mr']
     }), 200
 
+# The root page - just a welcome message
 @app.route('/')
 def index():
     """Root endpoint providing system status and guidance"""
@@ -108,6 +119,7 @@ def index():
     })
 
 if __name__ == '__main__':
+    # Print some friendly startup messages
     print("=" * 60)
     print("🌾 AI CROP DIAGNOSIS API SERVER")
     print("=" * 60)
@@ -117,6 +129,7 @@ if __name__ == '__main__':
     print(f"Supported languages: en, hi, te, ta, kn, mr")
     print("=" * 60)
     
+    # Start the server!
     app.run(
         host=settings.HOST,
         port=settings.PORT,

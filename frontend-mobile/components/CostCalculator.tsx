@@ -15,6 +15,10 @@ interface CostCalculatorProps {
     preventionCostPerAcre?: number;
 }
 
+/**
+ * A simple tool to help farmers budget for treatment.
+ * It compares the cost of curing the disease vs. preventing it.
+ */
 const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionCostPerAcre = 500 }) => {
     const [landArea, setLandArea] = useState('1');
     const [unit, setUnit] = useState<'acres' | 'hectares'>('acres');
@@ -22,7 +26,8 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
 
     const parseArea = () => {
         const area = parseFloat(landArea) || 0;
-        return unit === 'hectares' ? area * 2.47105 : area; // Convert hectares to acres
+        // Convert hectares to acres because our math is based on acres
+        return unit === 'hectares' ? area * 2.47105 : area;
     };
 
     const calculateCosts = () => {
@@ -30,7 +35,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
         let totalTreatmentCost = 0;
 
         pesticides.forEach(pesticide => {
-            // Parse dosage (e.g., "2-3 L/acre" -> take average 2.5)
+            // Extract numbers from strings like "2.5-3.0 liters/acre"
             const dosageMatch = pesticide.dosage_per_acre.match(/(\d+\.?\d*)-?(\d+\.?\d*)?/);
             if (dosageMatch) {
                 const min = parseFloat(dosageMatch[1]);
@@ -87,6 +92,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
             </View>
 
             <View style={styles.resultsSection}>
+                {/* Treatment Cost (Expensive!) */}
                 <View style={[styles.costCard, { backgroundColor: '#ffebee' }]}>
                     <TrendingUp size={20} color="#d32f2f" />
                     <View style={styles.costInfo}>
@@ -95,6 +101,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                     </View>
                 </View>
 
+                {/* Prevention Cost (Cheaper!) */}
                 <View style={[styles.costCard, { backgroundColor: '#e8f5e9' }]}>
                     <TrendingDown size={20} color="#2e7d32" />
                     <View style={styles.costInfo}>
@@ -103,6 +110,7 @@ const CostCalculator: React.FC<CostCalculatorProps> = ({ pesticides, preventionC
                     </View>
                 </View>
 
+                {/* Show how much they save by being proactive */}
                 {costs.savings > 0 && (
                     <View style={styles.savingsCard}>
                         <Text style={styles.savingsText}>

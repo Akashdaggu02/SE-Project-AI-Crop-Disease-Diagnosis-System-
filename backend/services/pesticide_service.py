@@ -7,20 +7,16 @@ from typing import List, Dict
 
 def get_pesticides_for_disease(disease_name: str, crop: str, prefer_organic: bool = False) -> List[Dict]:
     """
-    Get recommended pesticides for a specific disease
+    Search for medicines (pesticides) that cure the specific disease found.
     
     Args:
-        disease_name: Name of the disease
-        crop: Crop type
-        prefer_organic: Whether to prefer organic pesticides
-        
-    Returns:
-        List of pesticide recommendations
+        disease_name: The name of the disease (e.g., Early Blight)
+        prefer_organic: If True, we show rock-salt, neem oil, etc. first!
     """
-    # Clean disease name for matching
+    
     disease_clean = disease_name.replace('___', ' ').replace('_', ' ')
     
-    # Query pesticides that target this disease
+    # We look in our database for any pesticide that mentions this disease in its 'target_diseases'
     query = '''
         SELECT * FROM pesticides 
         WHERE target_diseases LIKE ? 
@@ -45,14 +41,14 @@ def get_pesticides_for_disease(disease_name: str, crop: str, prefer_organic: boo
         }
         pesticides.append(pesticide)
     
-    # If prefer organic, sort organic first
+    # If the user loves organic, we make sure those are at the very top
     if prefer_organic:
         pesticides.sort(key=lambda x: (not x['is_organic'], x['cost_per_liter']))
     
     return pesticides
 
 def get_pesticide_by_name(name: str) -> Dict:
-    """Get pesticide information by name"""
+    """Find details of a specific pesticide by its name."""
     query = 'SELECT * FROM pesticides WHERE name = ?'
     results = db.execute_query(query, (name,))
     
@@ -75,13 +71,8 @@ def get_pesticide_by_name(name: str) -> Dict:
 
 def check_pesticide_compatibility(pesticide_names: List[str]) -> Dict:
     """
-    Check if pesticides are compatible with each other
-    
-    Args:
-        pesticide_names: List of pesticide names
-        
-    Returns:
-        Dictionary with compatibility information
+    Safety check! Can these two medicines be mixed?
+    Mixing the wrong ones can be dangerous (like bleach and ammonia).
     """
     incompatibilities = []
     
@@ -94,6 +85,7 @@ def check_pesticide_compatibility(pesticide_names: List[str]) -> Dict:
         if not incompatible_with:
             continue
         
+        # Check against every other pesticide in the list
         for name2 in pesticide_names[i+1:]:
             if name2.lower() in incompatible_with.lower():
                 incompatibilities.append({
@@ -109,17 +101,12 @@ def check_pesticide_compatibility(pesticide_names: List[str]) -> Dict:
 
 def get_severity_based_recommendations(disease_name: str, severity_percent: float, crop: str) -> Dict:
     """
-    Get pesticide recommendations based on disease severity
-    
-    Args:
-        disease_name: Name of the disease
-        severity_percent: Disease severity percentage
-        crop: Crop type
-        
-    Returns:
-        Dictionary with recommendations and treatment approach
+    Smart Doctor Logic: 
+    - If disease is mild (0-5%), just watch it.
+    - If moderate (25-50%), use organic solutions.
+    - If severe (>50%), use strong chemicals immediately.
     """
-    # Get all pesticides for this disease
+    
     all_pesticides = get_pesticides_for_disease(disease_name, crop)
     
     if not all_pesticides:
@@ -132,30 +119,31 @@ def get_severity_based_recommendations(disease_name: str, severity_percent: floa
     
     severity_level = get_severity_level(severity_percent)
     
-    # Determine treatment approach based on severity
+    # Logic for customized treatment plans
     if severity_percent < 5:
-        # Healthy or very early stage
+        # Just started - try not to use chemicals yet
         approach = 'Preventive measures recommended. Monitor regularly.'
         urgency = 'low'
         recommended = [p for p in all_pesticides if p['is_organic']][:2]
     elif severity_percent < 25:
-        # Early stage - prefer organic
+        # Early stage - organic is usually enough
         approach = 'Early stage detected. Start with organic treatment.'
         urgency = 'medium'
         recommended = [p for p in all_pesticides if p['is_organic']][:3]
+        # If no organic options, use mild chemicals
         if len(recommended) < 2:
             recommended.extend([p for p in all_pesticides if not p['is_organic']][:2])
     elif severity_percent < 50:
-        # Moderate stage - combination approach
+        # Getting serious - time for real medicine
         approach = 'Moderate infection. Use effective fungicides/insecticides.'
         urgency = 'high'
-        # Mix of organic and chemical
+        # Mix of best options
         recommended = all_pesticides[:4]
     else:
-        # Severe stage - aggressive treatment
+        # Emergency! Save the crop!
         approach = 'Severe infection. Immediate aggressive treatment required.'
         urgency = 'critical'
-        # Prioritize most effective (usually chemical)
+        # Strong chemicals first
         recommended = [p for p in all_pesticides if not p['is_organic']][:3]
         if len(recommended) < 2:
             recommended.extend(all_pesticides[:3])
@@ -170,7 +158,7 @@ def get_severity_based_recommendations(disease_name: str, severity_percent: floa
     }
 
 def get_severity_level(severity_percent: float) -> str:
-    """Get severity level name from percentage"""
+    """Convert number (45%) to name (Moderate)"""
     if severity_percent < 5:
         return 'Healthy'
     elif severity_percent < 25:
@@ -183,7 +171,7 @@ def get_severity_level(severity_percent: float) -> str:
         return 'Critical'
 
 def get_application_note(severity_percent: float) -> str:
-    """Get application notes based on severity"""
+    """Give instructions on how often to spray based on how bad it is."""
     if severity_percent < 5:
         return 'Focus on prevention. Maintain good agricultural practices.'
     elif severity_percent < 25:
@@ -194,11 +182,11 @@ def get_application_note(severity_percent: float) -> str:
         return 'Immediate action required. Apply pesticides every 5-7 days. Consider removing heavily infected plants to prevent spread.'
 
 def get_organic_alternatives(disease_name: str, crop: str) -> List[Dict]:
-    """Get only organic pesticide alternatives"""
+    """Get only the eco-friendly options."""
     all_pesticides = get_pesticides_for_disease(disease_name, crop, prefer_organic=True)
     return [p for p in all_pesticides if p['is_organic']]
 
 def get_government_approved_pesticides(disease_name: str, crop: str) -> List[Dict]:
-    """Get only government-approved pesticides"""
+    """Get only the certified, safe-to-use pesticides."""
     all_pesticides = get_pesticides_for_disease(disease_name, crop)
     return [p for p in all_pesticides if p['is_government_approved']]

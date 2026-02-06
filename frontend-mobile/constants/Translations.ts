@@ -82,7 +82,7 @@ export const Translations = {
         organic: "Organic",
         chemical: "Chemical",
 
-        // Weather descriptions
+        
         mainlyClear: "Mainly Clear",
         partlyCloudy: "Partly Cloudy",
         overcast: "Overcast",
@@ -94,7 +94,7 @@ export const Translations = {
         thunderstorm: "Thunderstorm",
         yourLocation: "Your Location",
 
-        // Diagnosis Results - hardcoded text
+        
         healthy: "Healthy",
         healthyStage: "Healthy Stage",
         diseaseDescription: "The plant is healthy with no signs of disease",
@@ -103,7 +103,7 @@ export const Translations = {
         preventionLabel: "Prevention & Best Practices:",
         preventionHealthy: "Maintain proper watering, ensure good drainage, use balanced fertilizers, monitor regularly for pests",
 
-        // Chatbot
+        
         chatbotTitle: "Agri-AI Assistant",
         chatbotOnline: "Online",
         chatbotPlaceholder: "Ask about crops, pests, or weather...",
@@ -111,12 +111,12 @@ export const Translations = {
         chatbotGuestReminder: "Sign in to save your conversation history",
         chatbotError: "Sorry, I'm having trouble connecting to my brain right now.",
 
-        // Save History / Register prompts
+        
         saveHistory: "Save Your History",
         createAccountDesc: "Create a free account to track your farm's health over time.",
         registerNow: "Register Now",
 
-        // New keys
+        
         cameraPermissionReq: "We need camera access to scan your crops.",
         allowCamera: "Allow Camera",
         analyzeDisease: "Analyze Disease",
@@ -134,7 +134,7 @@ export const Translations = {
         enterArea: "Enter area",
         costDisclaimer: "* Costs are estimates based on average market prices and recommended dosages.",
 
-        // Auth
+        
         loginTitle: "Login",
         registerTitle: "Register",
         emailPlaceholder: "Email Address",
@@ -260,7 +260,7 @@ export const Translations = {
         organic: "जैविक",
         chemical: "रासायनिक",
 
-        // Weather descriptions
+        
         mainlyClear: "मुख्य रूप से साफ",
         partlyCloudy: "आंशिक रूप से बादल छाए",
         overcast: "बादल छाए हुए",
@@ -272,7 +272,7 @@ export const Translations = {
         thunderstorm: "आंधी",
         yourLocation: "आपका स्थान",
 
-        // Diagnosis Results
+        
         healthy: "स्वस्थ",
         healthyStage: "स्वस्थ अवस्था",
         diseaseDescription: "पौधा स्वस्थ है और रोग के कोई लक्षण नहीं हैं",
@@ -281,7 +281,7 @@ export const Translations = {
         preventionLabel: "रोकथाम और सर्वोत्तम प्रथाएं:",
         preventionHealthy: "उचित पानी बनाए रखें, अच्छी जल निकासी सुनिश्चित करें, संतुलित उर्वरकों का उपयोग करें, कीटों के लिए नियमित रूप से निगरानी करें",
 
-        // Chatbot
+        
         chatbotTitle: "कृषि-AI सहायक",
         chatbotOnline: "ऑनलाइन",
         chatbotPlaceholder: "फसलों, कीटों या मौसम के बारे में पूछें...",
@@ -289,7 +289,7 @@ export const Translations = {
         chatbotGuestReminder: "अपनी बातचीत का इतिहास सहेजने के लिए साइन इन करें",
         chatbotError: "क्षमा करें, मुझे अभी अपने दिमाग से जुड़ने में परेशानी हो रही है।",
 
-        // Save History / Register prompts
+        
         saveHistory: "अपना इतिहास सहेजें",
         createAccountDesc: "समय के साथ अपने खेत के स्वास्थ्य को ट्रैक करने के लिए एक मुफ्त खाता बनाएं।",
         registerNow: "अभी पंजीकरण करें",
@@ -390,7 +390,7 @@ export const Translations = {
         organic: "సేంద్రీయ",
         chemical: "రసాయన",
 
-        // Weather descriptions
+        
         mainlyClear: "ప్రధానంగా స్పష్టంగా",
         partlyCloudy: "పాక్షికంగా మేఘావృతం",
         overcast: "మేఘావృతం",
@@ -402,7 +402,7 @@ export const Translations = {
         thunderstorm: "ఉరుములతో కూడిన వర్షం",
         yourLocation: "మీ స్థానం",
 
-        // Diagnosis Results
+        
         healthy: "ఆరోగ్యకరమైన",
         healthyStage: "ఆరోగ్యకరమైన దశ",
         diseaseDescription: "మొక్క ఆరోగ్యంగా ఉంది మరియు వ్యాధి సంకేతాలు లేవు",
@@ -411,7 +411,7 @@ export const Translations = {
         preventionLabel: "నివారణ & ఉత్తమ పద్ధతులు:",
         preventionHealthy: "సరైన నీటిపారుదల నిర్వహించండి, మంచి నీటి నిష్కాసన నిర్ధారించండి, సమతుల్య ఎరువులు ఉపయోగించండి, తెగుళ్ళ కోసం క్రమం తప్పకుండా పర్యవేక్షించండి",
 
-        // Chatbot
+        
         chatbotTitle: "వ్యవసాయ-AI సహాయకుడు",
         chatbotOnline: "ఆన్‌లైన్",
         chatbotPlaceholder: "పంటలు, తెగుళ్ళు లేదా వాతావరణం గురించి అడగండి...",
@@ -419,7 +419,7 @@ export const Translations = {
         chatbotGuestReminder: "మీ సంభాషణ చరిత్రను సేవ్ చేయడానికి సైన్ ఇన్ చేయండి",
         chatbotError: "క్షమించండి, నేను ఇప్పుడు నా మెదడుకు కనెక్ట్ అవ్వడంలో ఇబ్బంది పడుతున్నాను.",
 
-        // Save History / Register prompts
+        
         saveHistory: "మీ చరిత్రను సేవ్ చేయండి",
         createAccountDesc: "సమయంతో పాటు మీ పంట ఆరోగ్యాన్ని ట్ర్యాక్ చేయడానికి ఉచిత ఖాతాను సృష్టించండి.",
         registerNow: "ఇప్పుడు నమోదు చేసుకోండి",
@@ -532,7 +532,7 @@ export const Translations = {
         organic: "இயற்கை",
         chemical: "ரசாயன",
 
-        // Weather descriptions
+        
         mainlyClear: "பெரும்பாலும் தெளிவாக",
         partlyCloudy: "பகுதி மேகமூட்டம்",
         overcast: "மேகமூட்டம்",
@@ -544,7 +544,7 @@ export const Translations = {
         thunderstorm: "இடி மின்னல்",
         yourLocation: "உங்கள் இடம்",
 
-        // Diagnosis Results
+        
         healthy: "ஆரோக்கியமான",
         healthyStage: "ஆரோக்கியமான நிலை",
         diseaseDescription: "செடி ஆரோக்கியமாக உள்ளது மற்றும் நோய் அறிகுறிகள் இல்லை",
@@ -553,7 +553,7 @@ export const Translations = {
         preventionLabel: "தடுப்பு & சிறந்த நடைமுறைகள்:",
         preventionHealthy: "சரியான நீர்ப்பாசனம் பராமரிக்கவும், நல்ல வடிகால் உறுதி செய்யவும், சமச்சீர் உரங்களைப் பயன்படுத்தவும், பூச்சிகளுக்கு தொடர்ந்து கண்காணிக்கவும்",
 
-        // Chatbot
+        
         chatbotTitle: "வேளாண்-AI உதவியாளர்",
         chatbotOnline: "ஆன்லைன்",
         chatbotPlaceholder: "பயிர்கள், பூச்சிகள் அல்லது வானிலை பற்றி கேளுங்கள்...",
@@ -561,7 +561,7 @@ export const Translations = {
         chatbotGuestReminder: "உங்கள் உரையாடல் வரலாற்றை சேமிக்க உள்நுழையவும்",
         chatbotError: "மன்னிக்கவும், நான் இப்போது என் மூளையுடன் இணைப்பதில் சிக்கல் உள்ளது.",
 
-        // Save History / Register prompts
+        
         saveHistory: "உங்கள் வரலாறு சேமிக்கவும்",
         createAccountDesc: "காலப்போக்கில் உங்கள் பண்ணையின் ஆரோக்கியத்தை கண்காணிக்க இலவச கணக்கை உருவாக்கவும்.",
         registerNow: "இப்போது பதிவு செய்யவும்",
@@ -651,7 +651,7 @@ export const Translations = {
         organic: "Organic",
         chemical: "Chemical",
 
-        // Weather descriptions
+        
         mainlyClear: "ಮುಖ್ಯವಾಗಿ ಸ್ಪಷ್ಟ",
         partlyCloudy: "ಭಾಗಶಃ ಮೋಡ",
         overcast: "ಮೋಡ ಕವಿದ",
@@ -663,7 +663,7 @@ export const Translations = {
         thunderstorm: "ಗುಡುಗು ಸಹಿತ ಮಳೆ",
         yourLocation: "ನಿಮ್ಮ ಸ್ಥಳ",
 
-        // Diagnosis Results
+        
         healthy: "ಆರೋಗ್ಯಕರ",
         healthyStage: "ಆರೋಗ್ಯಕರ ಹಂತ",
         diseaseDescription: "ಸಸ್ಯವು ಆರೋಗ್ಯಕರವಾಗಿದೆ ಮತ್ತು ರೋಗದ ಯಾವುದೇ ಚಿಹ್ನೆಗಳಿಲ್ಲ",
@@ -672,7 +672,7 @@ export const Translations = {
         preventionLabel: "ತಡೆಗಟ್ಟುವಿಕೆ & ಉತ್ತಮ ಅಭ್ಯಾಸಗಳು:",
         preventionHealthy: "ಸರಿಯಾದ ನೀರಾವರಿ ನಿರ್ವಹಿಸಿ, ಉತ್ತಮ ಒಳಚರಂಡಿ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ, ಸಮತೋಲಿತ ಗೊಬ್ಬರಗಳನ್ನು ಬಳಸಿ, ಕೀಟಗಳಿಗಾಗಿ ನಿಯಮಿತವಾಗಿ ಮೇಲ್ವಿಚಾರಣೆ ಮಾಡಿ",
 
-        // Chatbot
+        
         chatbotTitle: "ಕೃಷಿ-AI ಸಹಾಯಕ",
         chatbotOnline: "ಆನ್‌ಲೈನ್",
         chatbotPlaceholder: "ಬೆಳೆಗಳು, ಕೀಟಗಳು ಅಥವಾ ಹವಾಮಾನದ ಬಗ್ಗೆ ಕೇಳಿ...",
@@ -680,7 +680,7 @@ export const Translations = {
         chatbotGuestReminder: "ನಿಮ್ಮ ಸಂಭಾಷಣೆ ಇತಿಹಾಸವನ್ನು ಉಳಿಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ",
         chatbotError: "ಕ್ಷಮಿಸಿ, ನಾನು ಈಗ ನನ್ನ ಮೆದುಳಿಗೆ ಸಂಪರ್ಕಿಸಲು ತೊಂದರೆ ಅನುಭವಿಸುತ್ತಿದ್ದೇನೆ.",
 
-        // Save History / Register prompts
+        
         saveHistory: "ನಿಮ್ಮ ಇತಿಹಾಸವನ್ನು ಉಳಿಸಿ",
         createAccountDesc: "ಸಮಯದಲ್ಲಿ ನಿಮ್ಮ ಹೆಜ್ಜೆಯ ಆರೋಗ್ಯವನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಉಚಿತ ಖಾತೆಯನ್ನು ಸೃಷ್ಟಿಸಿ.",
         registerNow: "ಈಗ ನೋಂದಣಿ ಮಾಡಿ",
@@ -772,7 +772,7 @@ export const Translations = {
         organic: "सेंद्रिय",
         chemical: "रासायनिक",
 
-        // Weather descriptions
+        
         mainlyClear: "मुख्यतः स्वच्छ",
         partlyCloudy: "अंशतः ढगाळ",
         overcast: "ढगाळ",
@@ -784,7 +784,7 @@ export const Translations = {
         thunderstorm: "वादळी पाऊस",
         yourLocation: "तुमचे स्थान",
 
-        // Diagnosis Results
+        
         healthy: "निरोगी",
         healthyStage: "निरोगी अवस्था",
         diseaseDescription: "रोप निरोगी आहे आणि रोगाची कोणतीही चिन्हे नाहीत",
@@ -793,7 +793,7 @@ export const Translations = {
         preventionLabel: "प्रतिबंध आणि सर्वोत्तम पद्धती:",
         preventionHealthy: "योग्य पाणी पुरवठा राखा, चांगला निचरा सुनिश्चित करा, संतुलित खते वापरा, कीटकांसाठी नियमितपणे निरीक्षण करा",
 
-        // Chatbot
+        
         chatbotTitle: "कृषि-AI सहाय्यक",
         chatbotOnline: "ऑनलाइन",
         chatbotPlaceholder: "पिके, कीटक किंवा हवामान बद्दल विचारा...",
@@ -801,7 +801,7 @@ export const Translations = {
         chatbotGuestReminder: "तुमचा संभाषण इतिहास जतन करण्यासाठी साइन इन करा",
         chatbotError: "माफ करा, मला आता माझ्या मेंदूशी कनेक्ट होण्यात अडचण येत आहे.",
 
-        // Save History / Register prompts
+        
         saveHistory: "तुमचा इतिहास जतन करा",
         createAccountDesc: "वेळोवेळी तुमच्या शेताच्या आरोग्याचा मागोवा घेण्यासाठी मोफत खाते तयार करा.",
         registerNow: "आताच नोंदणी करा",
@@ -893,7 +893,7 @@ export const Translations = {
         organic: "ജൈവ",
         chemical: "രാസവസ്തു",
 
-        // Fallback for others to English for now or add more later
+        
         cameraPermissionReq: "We need camera access to scan your crops.",
         allowCamera: "Allow Camera",
         analyzeDisease: "Analyze Disease",
@@ -938,7 +938,7 @@ export const Translations = {
         history_empty_message: "Your past crop diagnoses will appear here.",
         start_new_diagnosis_btn: "Start New Diagnosis",
 
-        // Weather descriptions
+        
         mainlyClear: "പ്രധാനമായും തെളിഞ്ഞ",
         partlyCloudy: "ഭാഗികമായി മേഘാവൃതം",
         overcast: "മേഘാവൃതം",
@@ -950,7 +950,7 @@ export const Translations = {
         thunderstorm: "ഇടിമിന്നൽ",
         yourLocation: "നിങ്ങളുടെ സ്ഥാനം",
 
-        // Diagnosis Results
+        
         healthy: "ആരോഗ്യമുള്ള",
         healthyStage: "ആരോഗ്യമുള്ള ഘട്ടം",
         diseaseDescription: "ചെടി ആരോഗ്യമുള്ളതാണ്, രോഗത്തിന്റെ ലക്ഷണങ്ങളൊന്നുമില്ല",
@@ -959,7 +959,7 @@ export const Translations = {
         preventionLabel: "പ്രതിരോധവും മികച്ച രീതികളും:",
         preventionHealthy: "ശരിയായ ജലസേചനം നിലനിർത്തുക, നല്ല ഡ്രെയിനേജ് ഉറപ്പാക്കുക, സമതുലിതമായ വളങ്ങൾ ഉപയോഗിക്കുക, കീടങ്ങൾക്കായി പതിവായി നിരീക്ഷിക്കുക",
 
-        // Chatbot
+        
         chatbotTitle: "കൃഷി-AI സഹായി",
         chatbotOnline: "ഓൺലൈൻ",
         chatbotPlaceholder: "വിളകൾ, കീടങ്ങൾ അല്ലെങ്കിൽ കാലാവസ്ഥയെക്കുറിച്ച് ചോദിക്കുക...",
@@ -967,7 +967,7 @@ export const Translations = {
         chatbotGuestReminder: "നിങ്ങളുടെ സംഭാഷണ ചരിത്രം സംരക്ഷിക്കാൻ സൈൻ ഇൻ ചെയ്യുക",
         chatbotError: "ക്ഷമിക്കണം, എനിക്ക് ഇപ്പോൾ എന്റെ തലച്ചോറുമായി ബന്ധപ്പെടാൻ പ്രയാസമുണ്ട്.",
 
-        // Save History / Register prompts
+        
         saveHistory: "നിങ്ങളുടെ ചരിത്രം സംരക്ഷിക്കുക",
         createAccountDesc: "സമയത്തോടൊപ്പം നിങ്ങളുടെ കൃഷിയുടെ ആരോഗ്യം ട്രാക്ക് ചെയ്യാൻ സൗജന്യ അക്കൗണ്ട് സൃഷ്ടിക്കുക.",
         registerNow: "ഇപ്പോൾ രജിസ്റ്റർ ചെയ്യുക",
@@ -1059,7 +1059,7 @@ export const Translations = {
         organic: "ಸಾವಯವ",
         chemical: "ರಾಸಾಯನಿಕ",
 
-        // Fallback/English for now
+        
         cameraPermissionReq: "We need camera access to scan your crops.",
         allowCamera: "Allow Camera",
         analyzeDisease: "Analyze Disease",
@@ -1104,7 +1104,7 @@ export const Translations = {
         history_empty_message: "Your past crop diagnoses will appear here.",
         start_new_diagnosis_btn: "Start New Diagnosis",
 
-        // Weather descriptions
+        
         mainlyClear: "ಮುಖ್ಯವಾಗಿ ಸ್ಪಷ್ಟ",
         partlyCloudy: "ಭಾಗಶಃ ಮೇಘ",
         overcast: "ಮೇಘ ಕವಿದ",
@@ -1116,7 +1116,7 @@ export const Translations = {
         thunderstorm: "ಗುಡುಗು ಮಳೆ",
         yourLocation: "ಈರ್ ಸ್ಥಳ",
 
-        // Diagnosis Results
+        
         healthy: "ಆರೋಗ್ಯವಂತ",
         healthyStage: "ಆರೋಗ್ಯವಂತ ಹಂತ",
         diseaseDescription: "ಸಸ್ಯ ಆರೋಗ್ಯವಂತ ಇಪ್ಪುಂಡು ಬೊಕ್ಕ ರೋಗದ ಚಿಹ್ನೆಲು ಇಜ್ಜಿ",
@@ -1125,7 +1125,7 @@ export const Translations = {
         preventionLabel: "ತಡೆಗಟ್ಟುನ ಕ್ರಮಲು:",
         preventionHealthy: "ಸರಿಯಾದ್ ನೀರ್ ಕೊರ್ಪುನ ನಿರ್ವಹಣೆ ಮಲ್ಪುಲೆ, ಎಡ್ಡೆ ನೀರ್ ಹರಿಯುನ ವ್ಯವಸ್ಥೆ ಇಪ್ಪಡ್, ಸಮತೋಲಿತ ಗೊಬ್ಬರ ಉಪಯೋಗ ಮಲ್ಪುಲೆ, ಕೀಟೊಲೆಗ್ ನಿಯಮಿತವಾಗಿ ಪರೀಕ್ಷೆ ಮಲ್ಪುಲೆ",
 
-        // Chatbot
+        
         chatbotTitle: "ಕೃಷಿ-AI ಸಹಾಯಕ",
         chatbotOnline: "ಆನ್‌ಲೈನ್",
         chatbotPlaceholder: "ಬೆಳೆಲು, ಕೀಟೊಲು ಅಥವಾ ಹವಾಮಾನದ ಬಗ್ಗೆ ಕೇಳ್‌ಲೆ...",
@@ -1133,7 +1133,7 @@ export const Translations = {
         chatbotGuestReminder: "ಈರ್ ಸಂಭಾಷಣೆದ ಇತಿಹಾಸ ಉಳಿಸೊಕ್ಕು ಸೈನ್ ಇನ್ ಮಲ್ಪುಲೆ",
         chatbotError: "ಕ್ಷಮಿಸಿ, ಯಾನ್ ಈಗ ಎನ್ನ ಮೆದುಳಿಗ್ ಸಂಪರ್ಕ ಮಲ್ಪೆರೆ ತೊಂದರೆ ಆತ್‌ಂಡ್.",
 
-        // Save History / Register prompts
+        
         saveHistory: "ಈರ್ ಇತಿಹಾಸ ಉಳಿಸುಕು",
         createAccountDesc: "ಸಮಯದ ಕೂಡಲೆ ಈರ್ ಬೆಳೆದ ಆರೋಗ್ಯ ಟ್ರ್ಯಾಕ್ ಮಲ್ಪುನ ಕು ಉಚಿತ ಖಾತೆ ಸೃಷ್ಟಿ ಮಲ್ಪುಲೆ.",
         registerNow: "ಈಗ ನೋಂದಣಿ ಮಲ್ಪುಲೆ",

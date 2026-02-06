@@ -15,16 +15,23 @@ function RootLayoutContent() {
   const segments = useSegments();
   const router = useRouter();
 
+  // Wait for the app to load before deciding where to send the user
   useEffect(() => {
     if (isLoading) return;
   }, [isLoading]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      {/* The Stack Navigator handles moving between screens (like pages in a book) */}
       <Stack screenOptions={{ headerShown: false }}>
+        {/* The main tabs (Home, Explorer, History, Chat) */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+        {/* Authentication Screens */}
         <Stack.Screen name="login" options={{ title: t('login') || 'Login' }} />
         <Stack.Screen name="register" options={{ title: t('register') || 'Register' }} />
+
+        {/* Feature Screens */}
         <Stack.Screen name="results" options={{ title: t('diagnosisResults') || 'Diagnosis Results', headerShown: true }} />
         <Stack.Screen name="profile" options={{ title: t('profile') || 'Profile', headerShown: true }} />
       </Stack>
@@ -34,6 +41,7 @@ function RootLayoutContent() {
 }
 
 export default function RootLayout() {
+  // Wrap the entire app with our "Providers" so every screen can access Auth and Language settings
   return (
     <AuthProvider>
       <LanguageProvider>

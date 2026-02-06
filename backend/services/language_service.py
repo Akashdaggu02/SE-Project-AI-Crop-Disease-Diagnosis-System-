@@ -3,20 +3,22 @@ from typing import Optional, Dict
 import json
 import os
 
-# Initialize translator with specific service URL to avoid some blocking issues
+
+# Initialize the Google Translator (our babel fish!)
 translator = Translator(service_urls=['translate.google.com'])
 
-# Cache for translations to reduce API calls
+
+# A simple memory to store words we've already translated so we don't ask Google again
 translation_cache = {}
 
-# Load base translations from file
+
 TRANSLATIONS_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
     'database', 'seed', 'translations.json'
 )
 
 def load_base_translations() -> Dict:
-    """Load base UI translations from file"""
+    """Load default translations from a file (like a dictionary book)"""
     try:
         if os.path.exists(TRANSLATIONS_FILE):
             with open(TRANSLATIONS_FILE, 'r', encoding='utf-8') as f:
@@ -29,56 +31,60 @@ base_translations = load_base_translations()
 
 def translate_text(text: str, target_language: str = 'en', source_language: str = 'en') -> str:
     """
-    Translate text to target language using Google Translate
+    Magic function to change text from one language to another.
     
     Args:
-        text: Text to translate
-        target_language: Target language code (hi, te, ta, etc.)
-        source_language: Source language code (default: en)
+        text: The words to translate
+        target_language: The language we want (e.g., 'hi' for Hindi)
+        source_language: The language we have (defaults to English)
         
     Returns:
-        Translated text
+        The translated words
     """
-    # If target is same as source, return original
+    
+    # If no change needed, just return the text
     if target_language == source_language or target_language == 'en':
         return text
     
-    # Check cache first
+    
+    # Check our memory cache first
     cache_key = f"{text}_{source_language}_{target_language}"
     if cache_key in translation_cache:
         return translation_cache[cache_key]
     
     try:
-        # Translate using googletrans library (free)
+        
+        # Ask Google to translate it
         translation = translator.translate(text, src=source_language, dest=target_language)
         translated_text = translation.text
         
-        # Cache the translation
+        
+        # Remember it for next time
         translation_cache[cache_key] = translated_text
         
         return translated_text
     except Exception as e:
         print(f"Translation error: {e}")
-        # Return original text if translation fails
+        # If it fails, at least give back the original text
         return text
 
-# ... (Previous code remains) ...
+
 
 def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
     """
-    Get all UI labels translated to target language.
-    Only returns labels that were successfully translated (different from source).
+    Get all the buttons and labels for the app in the user's language.
     """
     if target_language == 'en':
         return UI_LABELS_ENGLISH
         
     translated_labels = {}
     for key, text in UI_LABELS_ENGLISH.items():
-        # Use cache or google translate
+        
+        # Translate each label one by one
         translated = translate_text(text, target_language)
         
-        # Only include if translation is different from English (or we are actually translating to something else)
-        # This prevents English fallbacks from overriding valid static translations in the frontend
+        
+        # Only send it back if it's actually different (saves data)
         if translated != text:
              translated_labels[key] = translated
         
@@ -86,33 +92,30 @@ def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
 
 def translate_diagnosis_result(result: Dict, target_language: str) -> Dict:
     """
-    Translate diagnosis result to target language
-    
-    Args:
-        result: Diagnosis result dictionary
-        target_language: Target language code
-        
-    Returns:
-        Translated result dictionary
+    Translate the final diagnosis report (Disease Name, Crop Name, Stage).
     """
     if target_language == 'en':
         return result
     
     translated = result.copy()
     
-    # Translate disease name (keep original format for reference)
+    
+    # Translate Disease Name (make it look nice too)
     if 'disease' in result:
         translated['disease_local'] = translate_text(
             result['disease'].replace('___', ' - ').replace('_', ' '),
             target_language
         )
     
-    # Translate stage
+    
+    # Translate Stage (Early, Moderate, Severe)
     if 'stage' in result:
         translated['stage_local'] = translate_text(result['stage'], target_language)
     
-    # Translate crop name
+    
+    # Translate Crop Name (using our own dictionary for better accuracy)
     if 'crop' in result:
+        # Pre-defined names are often better than machine translation for simple words
         crop_names = {
             'tomato': {'hi': 'टमाटर', 'te': 'టమాటా', 'ta': 'தக்காளி', 'kn': 'ಟೊಮೇಟೊ', 'mr': 'टोमॅटो'},
             'rice': {'hi': 'चावल', 'te': 'వరి', 'ta': 'அரிசி', 'kn': 'ಅಕ್ಕಿ', 'mr': 'तांदूळ'},
@@ -129,29 +132,22 @@ def translate_diagnosis_result(result: Dict, target_language: str) -> Dict:
 
 def translate_disease_info(disease_info: Dict, target_language: str) -> Dict:
     """
-    Translate disease information (description, symptoms, prevention)
-    
-    Args:
-        disease_info: Disease information dictionary
-        target_language: Target language code
-        
-    Returns:
-        Translated disease information
+    Translate the detailed disease info (symptoms, etc.).
     """
     if target_language == 'en':
         return disease_info
     
     translated = disease_info.copy()
     
-    # Translate description
+    
     if 'description' in disease_info:
         translated['description'] = translate_text(disease_info['description'], target_language)
     
-    # Translate symptoms
+    
     if 'symptoms' in disease_info:
         translated['symptoms'] = translate_text(disease_info['symptoms'], target_language)
     
-    # Translate prevention steps
+    
     if 'prevention_steps' in disease_info:
         translated['prevention_steps'] = translate_text(disease_info['prevention_steps'], target_language)
     
@@ -159,33 +155,26 @@ def translate_disease_info(disease_info: Dict, target_language: str) -> Dict:
 
 def translate_pesticide_info(pesticide_info: Dict, target_language: str) -> Dict:
     """
-    Translate pesticide information
-    
-    Args:
-        pesticide_info: Pesticide information dictionary
-        target_language: Target language code
-        
-    Returns:
-        Translated pesticide information
+    Translate dosage and instructions for pesticides.
     """
     if target_language == 'en':
         return pesticide_info
     
     translated = pesticide_info.copy()
     
-    # Translate dosage
+    
     if 'dosage_per_acre' in pesticide_info:
         translated['dosage_per_acre'] = translate_text(pesticide_info['dosage_per_acre'], target_language)
     
-    # Translate frequency
+    
     if 'frequency' in pesticide_info:
         translated['frequency'] = translate_text(pesticide_info['frequency'], target_language)
     
-    # Translate warnings
+    
     if 'warnings' in pesticide_info:
         translated['warnings'] = translate_text(pesticide_info['warnings'], target_language)
     
-    # Translate type
+    
     if 'type' in pesticide_info:
         type_translations = {
             'fungicide': {'hi': 'फफूंदनाशक', 'te': 'శిలీంద్ర నాశిని', 'ta': 'பூஞ்சைக் கொல்லி', 'kn': 'ಶಿಲೀಂಧ್ರನಾಶಕ', 'mr': 'बुरशीनाशक'},
@@ -200,26 +189,20 @@ def translate_pesticide_info(pesticide_info: Dict, target_language: str) -> Dict
 
 def get_ui_text(key: str, language: str = 'en') -> str:
     """
-    Get UI text in specified language
-    
-    Args:
-        key: Translation key
-        language: Language code
-        
-    Returns:
-        Translated UI text
+    Helper to get a single UI text string.
     """
     if language in base_translations and key in base_translations[language]:
         return base_translations[language][key]
     
-    # Fallback to English
+    
     if 'en' in base_translations and key in base_translations['en']:
         return base_translations['en'][key]
     
-    # Return key if not found
+    
     return key
 
-# Define standard UI labels for dynamic translation
+
+# Default English Labels - The master list
 UI_LABELS_ENGLISH = {
     "confidence_score": "Confidence Score",
     "severity": "Severity",
@@ -259,26 +242,26 @@ UI_LABELS_ENGLISH = {
 
 def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
     """
-    Get all UI labels translated to target language.
-    Only returns labels that were successfully translated (different from source).
+    Get all the buttons and labels for the app in the user's language.
     """
     if target_language == 'en':
         return UI_LABELS_ENGLISH
         
     translated_labels = {}
     for key, text in UI_LABELS_ENGLISH.items():
-        # Use cache or google translate
+        
+        # Translate each label one by one
         translated = translate_text(text, target_language)
         
-        # Only include if translation is different from English (or we are actually translating to something else)
-        # This prevents English fallbacks from overriding valid static translations in the frontend
+        
+        # Only send it back if it's actually different (saves data)
         if translated != text:
              translated_labels[key] = translated
         
     return translated_labels
 
 def get_supported_languages() -> Dict[str, str]:
-    """Get list of supported languages"""
+    """List of languages our app can speak"""
     return {
         'en': 'English',
         'hi': 'हिंदी (Hindi)',

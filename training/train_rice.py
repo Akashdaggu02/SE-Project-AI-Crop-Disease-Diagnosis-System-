@@ -6,45 +6,49 @@ from tensorflow.keras.applications import InceptionV3
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
 
-# Suppress warnings
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+# --- Configuration ---
+# Setting up the environment
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Suppress unnecessary TensorFlow logs
 
 print(f"TensorFlow Version: {tf.__version__}")
 
-# Constants
+# Basic parameters
 BATCH_SIZE = 32
 EPOCHS = 30
-IMAGE_SIZE = (299, 299) # InceptionV3 uses 299x299
+IMAGE_SIZE = (299, 299) # InceptionV3 expects 299x299 images
 
 DATASET_DIR = os.path.join('dataset', 'rice')
 MODELS_DIR = 'models'
 
+# Create the folder for saving models if it doesn't exist
 if not os.path.exists(MODELS_DIR):
     os.makedirs(MODELS_DIR)
 
 print(f"Checking dataset at {DATASET_DIR}...")
-# Check if dataset directory exists
+
 if not os.path.exists(DATASET_DIR):
     print(f"Error: Dataset directory not found in {DATASET_DIR}")
     exit(1)
 
-# Data Generators
+
+# --- Data Preparation ---
 print("Setting up Data Generators...")
 
-# Training generator with augmentation and validation split
+# We use Data Augmentation to artificially increase our dataset
+# This helps the model generalize better by seeing rotated, zoomed, and flipped versions of the images
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-    rescale=1./255,
-    rotation_range=40,
-    horizontal_flip=True,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    fill_mode='nearest',
-    validation_split=0.2  # Using 20% for validation
+    rescale=1./255,         # Normalize pixel values
+    rotation_range=40,      # Rotate images randomly
+    horizontal_flip=True,   # Flip images horizontally
+    width_shift_range=0.2,  # Shift width
+    height_shift_range=0.2, # Shift height
+    shear_range=0.2,        # Shear transformation
+    zoom_range=0.2,         # Zoom in/out
+    fill_mode='nearest',    # Fill empty pixels after transformation
+    validation_split=0.2    # Use 20% of data for validation
 )
 
-# Validation generator (only rescaling) with validation split
+# For validation, we only rescale (no random changes)
 val_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
     rescale=1./255,
     validation_split=0.2
@@ -56,9 +60,9 @@ train_generator = train_datagen.flow_from_directory(
     target_size=IMAGE_SIZE,
     batch_size=BATCH_SIZE,
     class_mode='categorical',
-    subset='training', # Set as training data
+    subset='training', # This is the 80% used for training
     shuffle=True,
-    seed=42 # Ensure consistent split
+    seed=42 
 )
 
 print("Loading Validation Data...")
@@ -67,37 +71,43 @@ validation_generator = val_datagen.flow_from_directory(
     target_size=IMAGE_SIZE,
     batch_size=BATCH_SIZE,
     class_mode='categorical',
-    subset='validation', # Set as validation data
+    subset='validation', # This is the 20% used for checking progress
     shuffle=False,
-    seed=42 # Ensure consistent split matches training
+    seed=42 
 )
 
 num_classes = train_generator.num_classes
 print(f"Number of classes: {num_classes}")
 print(f"Class indices: {train_generator.class_indices}")
 
-# Model Building
+# --- Model Architecture (Transfer Learning) ---
 print("Building model with InceptionV3 (Keras Applications)...")
+# We load a pre-trained model (InceptionV3) trained on ImageNet
+# include_top=False means we remove the final classification layer so we can add our own
 base_model = InceptionV3(weights='imagenet', include_top=False, input_shape=IMAGE_SIZE+(3,))
 
-# Freeze the base model
+# Freezing the base model layers prevents them from being updated during the first phase of training
+# We only want to train our custom layers at the end
 base_model.trainable = False
 
+# Add our custom layers on top
 x = base_model.output
 x = GlobalAveragePooling2D()(x)
-x = Dense(512, activation='relu')(x)
-x = Dropout(0.2)(x)
-predictions = Dense(num_classes, activation='softmax')(x)
+x = Dense(512, activation='relu')(x) # Add a dense layer for learning specific features
+x = Dropout(0.2)(x)                  # Dropout helps prevent overfitting
+predictions = Dense(num_classes, activation='softmax')(x) # Final output layer for our classes
 
+# Combine base model and new layers
 model = Model(inputs=base_model.input, outputs=predictions)
 
 model.summary()
 
 model.compile(
-   optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), 
-   loss='categorical_crossentropy',
-   metrics=['accuracy'])
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), 
+    loss='categorical_crossentropy',
+    metrics=['accuracy'])
 
+# --- Training ---
 print(f"Starting training for {EPOCHS} epochs...")
 history = model.fit(
         train_generator,
@@ -108,13 +118,13 @@ history = model.fit(
         verbose=1
 )
 
-# Save Model
+# --- Saving the Model ---
 model_name = 'rice_disease_model.h5'
 model_path = os.path.join(MODELS_DIR, model_name)
 model.save(model_path)
 print(f"Model saved to {model_path}")
 
-# Plotting
+# Plotting the results
 try:
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']

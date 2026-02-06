@@ -5,15 +5,19 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { Camera as CameraIcon, Image as ImageIcon, X, ShieldAlert, Sun, CloudRain, Wind, ArrowRight, MapPin, Globe } from 'lucide-react-native';
+
+// --- Internal Imports ---
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-
 import { useLanguage } from '../../context/LanguageContext';
 import { T } from '../../components/ui/T';
 import { addToLocalHistory } from '../../services/localHistory';
 
 const { width } = Dimensions.get('window');
 
+// --- Configuration ---
+// These are the crops our AI knows how to diagnose.
+// Ideally, this list mimics what the backend supports.
 const CROP_OPTIONS = [
   { id: 'tomato', name: 'Tomato', image: require('../../assets/images/tomato.png') },
   { id: 'potato', name: 'Potato', image: require('../../assets/images/potato.png') },
@@ -23,12 +27,18 @@ const CROP_OPTIONS = [
 ];
 
 export default function DashboardScreen() {
-  const [permission, requestPermission] = useCameraPermissions();
-  const [selectedCrop, setSelectedCrop] = useState('tomato');
-  const [image, setImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  // --- Navigation & Permissions ---
+  const router = useRouter(); // Helps us move between screens
+  const [permission, requestPermission] = useCameraPermissions(); // Ask the phone nicely for camera access
+
+  // --- App State (What's happening right now) ---
+  const [selectedCrop, setSelectedCrop] = useState('tomato'); // crop selected by farmer
+  const [image, setImage] = useState<string | null>(null); // The photo to analyze
+  const [loading, setLoading] = useState(false); // Are we waiting for the AI?
+  const [isScanning, setIsScanning] = useState(false); // Is the user in "Scan Mode"?
+  const [isCameraActive, setIsCameraActive] = useState(false); // Is the actual camera open?
+
+  // --- Location & Weather State ---
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationPermission, setLocationPermission] = useState(false);
   const [weather, setWeather] = useState<{
@@ -36,16 +46,17 @@ export default function DashboardScreen() {
     description: string;
     location: string;
   } | null>(null);
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
-  const cameraRef = useRef<any>(null);
-  const router = useRouter();
-  const { user, isGuest, updateUser } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  // --- Helper Hooks ---
+  const cameraRef = useRef<any>(null); // A reference to the camera component so we can tell it to "click"
+  const { user, isGuest, updateUser } = useAuth(); // Who is using the app?
+  const { language, setLanguage, t } = useLanguage(); // Current language
+  const [showLanguageModal, setShowLanguageModal] = useState(false); // Is the language picker open?
+
   console.log('DashboardScreen rendered. Language:', language);
 
-  // Use languages from context/constants? Or keep local definition?
-  // Better to use the one from Profile or Constants if available, but for now reuse strict list
+  // --- Language Options ---
+  // List of languages we support for the UI
   const LANGUAGES = [
     { code: 'en', name: 'English', nativeName: 'English' },
     { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
@@ -57,17 +68,16 @@ export default function DashboardScreen() {
     { code: 'tcy', name: 'Tulu', nativeName: 'ತುಳು' },
   ];
 
-  // Fetch weather data based on location
-  // Fetch weather data from OpenMeteo (Free, No Key)
+  // --- Weather Logic ---
+  // We explicitly fetch weather because crop diseases depend heavily on it.
   const fetchWeather = async (lat: number, lon: number) => {
     try {
-      // 1. Get Weather
+      // We use Open-Meteo as a free weather API
       const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
       const weatherRes = await fetch(weatherUrl);
       const weatherData = await weatherRes.json();
 
-      // 2. Get Location Name (Reverse Geocoding)
-      // Using BigDataCloud extraction or similar free service, or just expo-location reverseGeocode
+      // We also want to know the *name* of the place (e.g., "Hyderabad")
       const locationName = await reverseGeocode(lat, lon);
 
       if (weatherData.current_weather) {
@@ -79,15 +89,16 @@ export default function DashboardScreen() {
       }
     } catch (error) {
       console.log('Error fetching weather:', error);
-      // Fallback
+      // Fallback if weather fails (don't crash the app)
       setWeather({
         temp: 28,
         description: 'Clear',
-        location: 'Weather Unavailable', // Better than 'Your Location'
+        location: 'Weather Unavailable',
       });
     }
   };
 
+  // Convert GPS coordinates (lat, lon) into a city name
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
       const result = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
@@ -100,8 +111,9 @@ export default function DashboardScreen() {
     return t('yourLocation');
   };
 
+  // Turn numeric weather codes into human-readable text (and translate them!)
   const getWeatherDescription = (code: number) => {
-    // WMO Weather interpretation codes (WW) - return translation keys
+    // WMO Weather interpretation codes (https://open-meteo.com/en/docs)
     const codeToKey: { [key: number]: string } = {
       0: 'clearSky',
       1: 'mainlyClear', 2: 'partlyCloudy', 3: 'overcast',
@@ -115,12 +127,14 @@ export default function DashboardScreen() {
     return t(key as any);
   };
 
-  // Request location permission and get location
+
+  // --- Helper: Initial Setup ---
+  // When the app starts, we try to get the user's location automatically
   useEffect(() => {
     (async () => {
       try {
         if (Platform.OS === 'web') {
-          // Web platform: use browser geolocation API
+          // Web Browser Geolocation
           if ('geolocation' in navigator) {
             navigator.geolocation.getCurrentPosition(
               (position) => {
@@ -143,7 +157,7 @@ export default function DashboardScreen() {
             );
           }
         } else {
-          // Native platform: use expo-location
+          // Native Device Geolocation (Android/iOS)
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status === 'granted') {
             setLocationPermission(true);
@@ -159,6 +173,7 @@ export default function DashboardScreen() {
               console.log('Error getting location:', error);
             }
           } else {
+            // Permission denied logic
             setWeather({
               temp: 28,
               description: 'Clear Sky',
@@ -174,9 +189,12 @@ export default function DashboardScreen() {
 
 
 
-  // --- CAMERA LOGIC ---
-  if (!permission) return <View />;
+  // --- Camera & Image Handling ---
+
+  // 1. Permission Check
+  if (!permission) return <View />; // Still loading permission status
   if (!permission.granted && isScanning) {
+    // If the user hasn't allowed the camera, we show a friendly request screen
     return (
       <View style={styles.permissionContainer}>
         <T style={styles.permissionText}>cameraPermissionReq</T>
@@ -190,19 +208,21 @@ export default function DashboardScreen() {
     );
   }
 
+  // 2. Take Picture Button Action
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync({ quality: 1.0 });
       setImage(photo.uri);
-      setIsCameraActive(false);
+      setIsCameraActive(false); // Close camera view, show preview
     }
   };
 
+  // 3. Upload from Gallery Action
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,  // Disabled to ensure complete image is uploaded
-      quality: 1.0,  // 100% quality - no compression
+      allowsEditing: false, // We check quality ourselves later
+      quality: 1.0,
     });
 
     if (!result.canceled) {
@@ -211,41 +231,43 @@ export default function DashboardScreen() {
     }
   };
 
+  // 4. Validate Image (Placeholder for now)
   const validateImageQuality = (uri: string): boolean => {
-    // Basic client-side validation
-    // In a real app, you might check file size, dimensions, etc.
-    return true; // For now, accept all images
+    // In a real app, we might check brightness/blur here before sending.
+    // Right now, the backend does the heavy lifting.
+    return true;
   };
 
+  // 5. The Main Action: Diagnose!
   const handleDiagnose = async () => {
     if (!image) return;
-    // Backend will handle quality and confidence validation
     await performDiagnosis();
   };
 
+  // 6. Diagnosis Logic (Sending to Backend)
   const performDiagnosis = async () => {
     if (!image) return;
 
-    setLoading(true);
+    setLoading(true); // Show spinner
 
     try {
       let response;
 
       if (Platform.OS === 'web') {
-        // Web platform: use fetch with blob
+        // --- Web Logic ---
+        // On web, we have to convert the image URI to a Blob to send it.
         const blob = await fetch(image).then(r => r.blob());
         const formData = new FormData();
         formData.append('image', blob, 'photo.jpg');
         formData.append('crop', selectedCrop);
 
-
-        // Add location if available
+        // Add context for better AI accuracy
         if (location) {
           formData.append('latitude', location.latitude.toString());
           formData.append('longitude', location.longitude.toString());
         }
 
-        // Add language
+        // Add language so the backend replies in the right language
         formData.append('language', language);
 
         const apiUrl = 'http://localhost:5000/api/diagnosis/detect';
@@ -256,7 +278,7 @@ export default function DashboardScreen() {
 
         if (!fetchResponse.ok) {
           const errorData = await fetchResponse.json();
-          // Create an error object that mimics Axios structure for consistency in catch block
+          // Create a custom error to handle it in the catch block
           const customError: any = new Error(errorData.error || 'Failed to detect disease');
           customError.response = {
             status: fetchResponse.status,
@@ -267,7 +289,8 @@ export default function DashboardScreen() {
 
         response = { data: await fetchResponse.json() };
       } else {
-        // Native platform: use axios with React Native FormData
+        // --- Mobile Logic ---
+        // On phones, it's easier. We just construct the FormData with the URI.
         const formData = new FormData();
         const uriParts = image.split('.');
         const fileType = uriParts[uriParts.length - 1];
@@ -279,7 +302,7 @@ export default function DashboardScreen() {
         } as any);
         formData.append('crop', selectedCrop);
 
-        // Add location if available
+        // Add context
         if (location) {
           formData.append('latitude', location.latitude.toString());
           formData.append('longitude', location.longitude.toString());
@@ -292,17 +315,19 @@ export default function DashboardScreen() {
         });
       }
 
-      // Save for guest session
+      // --- Success! ---
+      // If we are a guest, save this locally so they don't lose it.
       if (isGuest) {
         await addToLocalHistory(response.data, selectedCrop);
       }
 
+      // Go to results screen
       router.push({
         pathname: '/results',
         params: { data: JSON.stringify(response.data) }
       });
 
-      // Show quality warning if present (after navigation)
+      // Show warning if the image was "meh" but we still got a result
       if (response.data.quality_warning) {
         setTimeout(() => {
           Alert.alert(
@@ -313,7 +338,7 @@ export default function DashboardScreen() {
         }, 500);
       }
 
-      // Reset after successful nav
+      // Reset state so they can scan again later
       setTimeout(() => {
         setIsScanning(false);
         setImage(null);
@@ -322,15 +347,12 @@ export default function DashboardScreen() {
     } catch (error: any) {
       console.log('=== Diagnosis Error Debug ===');
       console.log('Error object:', error);
-      console.log('Error response:', error.response);
-      console.log('Error response data:', error.response?.data);
-      console.log('Error response status:', error.response?.status);
-      console.log('Error type:', error.response?.data?.error);
-      console.log('============================');
+      // ... debug logs ...
 
-      // Check if it's a quality issue (Low confidence or rejected)
+      // --- Error Handling ---
       const errData = error.response?.data;
       if (error.response?.status === 400 && (errData?.error === 'Low confidence prediction' || errData?.error === 'Image Rejected')) {
+        // This is a "good" error - it means our quality control worked.
         console.log('✅ Detected quality error - showing alert');
         Alert.alert(
           t('imageQualityIssue'),
@@ -341,18 +363,23 @@ export default function DashboardScreen() {
           ]
         );
       } else {
+        // This is a "bad" error - something actually broke.
         console.log('❌ Not a quality error - showing generic error');
         const message = errData?.message || errData?.error || 'Failed to detect disease.';
         Alert.alert(t('error'), message);
       }
     } finally {
-      setLoading(false);
+      setLoading(false); // Stop loading spinner
     }
   };
 
-  // --- SCANNING (DIAGNOSIS) VIEW ---
+
+  // --- Render Logic ---
+
+  // 1. Scanning Mode UI (Camera or Preview)
   if (isScanning) {
     if (isCameraActive) {
+      // THE CAMERA VIEW
       return (
         <View style={styles.cameraContainer}>
           <CameraView style={styles.camera} ref={cameraRef}>
@@ -370,6 +397,7 @@ export default function DashboardScreen() {
       );
     }
 
+    // THE PREVIEW / UPLOAD MODE
     return (
       <ScrollView style={styles.container}>
         <View style={styles.scanHeader}>
@@ -380,6 +408,7 @@ export default function DashboardScreen() {
           <View style={{ width: 24 }} />
         </View>
 
+        {/* Crop Selection Chips */}
         <View style={styles.cropSelectorContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
             {CROP_OPTIONS.map((crop) => (
@@ -394,6 +423,7 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
 
+        {/* Image Preview or Action Buttons */}
         <View style={styles.uploadArea}>
           {image ? (
             <View style={styles.previewArea}>
@@ -420,6 +450,7 @@ export default function DashboardScreen() {
           )}
         </View>
 
+        {/* Helpful Tips for the Farmer */}
         <View style={styles.tipsCard}>
           <T style={styles.tipsTitle}>tipsTitle</T>
           <T style={styles.tipText}>tip1</T>
@@ -428,6 +459,7 @@ export default function DashboardScreen() {
           <T style={styles.tipText}>tip4</T>
         </View>
 
+        {/* The Big "Diagnose" Button */}
         <TouchableOpacity
           style={[styles.mainButton, (!image || loading) && styles.disabledButton]}
           onPress={handleDiagnose}
@@ -444,10 +476,11 @@ export default function DashboardScreen() {
     );
   }
 
-  // --- DASHBOARD (HOME) VIEW ---
+
+  // 2. Normal Dashboard UI
   return (
     <ScrollView key={language} style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Header Section */}
+      {/* Header with Name & Language Picker */}
       <View style={styles.dashboardHeader}>
         <View style={styles.headerLeft}>
           <View>
@@ -466,7 +499,7 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Weather Widget */}
+      {/* Weather Card - Critical for agriculture */}
       <View style={styles.weatherCard}>
         <View style={styles.weatherInfo}>
           <Text style={styles.weatherTemp}>
@@ -481,9 +514,10 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={[styles.locationBadge, !location && styles.locationBadgeDisabled]}
             onPress={async () => {
+              // Logic to ask for GPS permission manually if they clicked the button
               if (!location) {
                 if (Platform.OS === 'web') {
-                  // Web platform: use browser geolocation
+                  // Web GPS Request
                   if ('geolocation' in navigator) {
                     navigator.geolocation.getCurrentPosition(
                       (position) => {
@@ -504,7 +538,7 @@ export default function DashboardScreen() {
                     Alert.alert('Not Supported', 'Geolocation is not supported by your browser.');
                   }
                 } else {
-                  // Native platform: request location permission
+                  // Mobile GPS Request
                   const { status } = await Location.requestForegroundPermissionsAsync();
                   if (status === 'granted') {
                     setLocationPermission(true);
@@ -537,7 +571,7 @@ export default function DashboardScreen() {
         <Sun size={48} color="#FFD700" />
       </View>
 
-      {/* Main Action */}
+      {/* Main "Call to Action" Button - Start Scanning */}
       <View style={styles.ctaSection}>
         <Text style={styles.sectionTitle}>{t('whatWouldYouLikeToDo')}</Text>
         <TouchableOpacity style={styles.heroButton} onPress={() => setIsScanning(true)}>
@@ -554,7 +588,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Quick Tips / Crops */}
+      {/* Grid of supported crops (Visual Reference) */}
       <View style={styles.section}>
         <T style={styles.sectionTitle}>supportedCrops</T>
         <View style={styles.grid}>
@@ -569,7 +603,7 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Guest Upsell */}
+      {/* Upsell for Guest Users to Register */}
       {isGuest && (
         <View style={styles.upsellCard}>
           <ShieldAlert size={24} color="#4caf50" style={{ marginBottom: 8 }} />
@@ -606,19 +640,20 @@ export default function DashboardScreen() {
                   ]}
                   onPress={async () => {
                     try {
-                      // Optimistic Update
+                      // 1. Update app context
                       setLanguage(lang.code as any);
                       setShowLanguageModal(false);
                       Alert.alert(t('languageChanged'), `${lang.name}`);
 
+                      // 2. If user is logged in, save to backend
                       if (!isGuest && user) {
                         await api.put('/user/language', { language: lang.code });
-                        // Update user context with new language
+                        // 3. Update local user state
                         await updateUser({ preferred_language: lang.code });
                       }
                     } catch (error) {
                       console.log("Error updating language", error);
-                      // Alert.alert(t('error'), t('failedUpdate')); // Optional: suppress if optimistic update worked
+                      // Fail silently or show toast
                     }
                   }}
                 >
@@ -664,7 +699,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold'
   },
-  // Dashboard Styles
+
   dashboardHeader: {
     paddingTop: 60,
     paddingHorizontal: 24,
@@ -888,7 +923,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-  // Scan View Styles
+
   scanHeader: {
     paddingTop: 60,
     paddingHorizontal: 20,
@@ -1057,7 +1092,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: '#fff',
   },
-  // Language Modal Styles
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

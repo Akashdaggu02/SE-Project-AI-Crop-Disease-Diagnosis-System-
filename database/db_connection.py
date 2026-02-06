@@ -3,22 +3,30 @@ import os
 from contextlib import contextmanager
 from typing import Optional
 
-# Database file path
+
+# This is where our actual database file lives on the hard drive
 DB_PATH = os.path.join(os.path.dirname(__file__), 'crop_diagnosis.db')
 
 class Database:
-    """SQLite database connection manager"""
+    """
+    The Librarian for our data.
+    It handles opening the book (database), writing notes (saving data), and reading them back.
+    """
     
     def __init__(self, db_path: str = DB_PATH):
         self.db_path = db_path
         self._init_database()
     
     def _init_database(self):
-        """Initialize database and create tables if they don't exist"""
+        """
+        Setup the library shelves (Tables) if they don't exist yet.
+        This runs every time the app starts, just to be safe.
+        """
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Users table
+            # Table 1: Users
+            # Stores who is using the app (names, login info, farm details)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +42,8 @@ class Database:
                 )
             ''')
             
-            # Diagnosis history table
+            # Table 2: Diagnosis History
+            # Records every time a user uploads a photo for a checkup
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS diagnosis_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +61,8 @@ class Database:
                 )
             ''')
             
-            # Pesticide recommendations table (linked to diagnosis)
+            # Table 3: Pesticide Recommendations
+            # Remembers what medicines we told the user to buy
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS pesticide_recommendations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +77,8 @@ class Database:
                 )
             ''')
             
-            # Cost calculations table
+            # Table 4: Cost Calculations
+            # Stores the estimated bill for the treatment
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS cost_calculations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +92,8 @@ class Database:
                 )
             ''')
             
-            # Chatbot conversations table
+            # Table 5: Chatbot History
+            # Keeps a record of conversations with the AI Assistant
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS chatbot_conversations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,7 +106,8 @@ class Database:
                 )
             ''')
             
-            # Disease information table (seed data)
+            # Table 6: Diseases Knowledge Base
+            # Static info about various crop diseases
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS diseases (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,7 +121,8 @@ class Database:
                 )
             ''')
             
-            # Pesticides master table (seed data)
+            # Table 7: Pesticides Inventory
+            # List of all available medicines and their details
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS pesticides (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -129,38 +143,41 @@ class Database:
     
     @contextmanager
     def get_connection(self):
-        """Context manager for database connections"""
+        """
+        A helper to easily open and close the door (connection).
+        It makes sure the door is always closed processing is done, even if there's an error.
+        """
         conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Enable column access by name
+        conn.row_factory = sqlite3.Row  # Let us access columns by name (row['email']) instead of index (row[1])
         try:
             yield conn
             conn.commit()
         except Exception as e:
-            conn.rollback()
+            conn.rollback() # Undo changes if something went wrong
             raise e
         finally:
             conn.close()
     
     def execute_query(self, query: str, params: tuple = ()):
-        """Execute a query and return results"""
+        """Read data from the database (SELECT)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
             return cursor.fetchall()
     
     def execute_insert(self, query: str, params: tuple = ()) -> int:
-        """Execute an insert query and return the last row id"""
+        """Add new data and return the ID of the new row"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
             return cursor.lastrowid
     
     def execute_update(self, query: str, params: tuple = ()) -> int:
-        """Execute an update/delete query and return affected rows"""
+        """Modify existing data (UPDATE or DELETE)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
             return cursor.rowcount
 
-# Global database instance
+
 db = Database()

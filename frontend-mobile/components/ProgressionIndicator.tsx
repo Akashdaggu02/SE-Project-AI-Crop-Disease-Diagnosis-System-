@@ -4,10 +4,14 @@ import { AlertCircle, AlertTriangle, AlertOctagon } from 'lucide-react-native';
 import { useLanguage } from '../context/LanguageContext';
 
 interface ProgressionIndicatorProps {
-    severity: number; // 0-100
+    severity: number;
     stage?: string;
 }
 
+/**
+ * Shows how far the disease has spread using a progress bar.
+ * Also changes color like a traffic light: Green (Early) -> Yellow (Moderate) -> Red (Severe).
+ */
 const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, stage }) => {
     const { t } = useLanguage();
 
@@ -32,6 +36,7 @@ const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, s
                 </View>
             </View>
 
+            {/* The actual progress bar */}
             <View style={styles.progressBarContainer}>
                 <View style={styles.progressBarBg}>
                     <View
@@ -47,6 +52,7 @@ const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, s
                 <Text style={styles.percentageText}>{severity.toFixed(1)}%</Text>
             </View>
 
+            {/* Helpful message based on severity */}
             <View style={[styles.infoCard, { backgroundColor: severityInfo.bg }]}>
                 <Text style={[styles.infoText, { color: severityInfo.color }]}>
                     {severity < 30 && t('earlyDetectionMsg')}

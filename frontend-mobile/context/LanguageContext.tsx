@@ -12,12 +12,17 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+/**
+ * Language Provider:
+ * This makes sure the app speaks the user's language.
+ * It handles loading translations from the backend and switching languages on the fly.
+ */
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user } = useAuth();
     const [language, setLanguageState] = useState<LanguageCode>('en');
     const [dynamicTranslations, setDynamicTranslations] = useState<Record<string, string>>({});
 
-    // Sync with user preference if logged in
+    // If the user logs in and has a preferred language, switch to it automatically
     useEffect(() => {
         if (user?.preferred_language && Object.keys(Translations).includes(user.preferred_language)) {
             console.log('Syncing language from user pref:', user.preferred_language);
@@ -25,11 +30,12 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
     }, [user?.preferred_language]);
 
-    // Fetch dynamic translations when language changes
+    // Fetch new translations whenever the language changes
+    // (We don't ship all languages in the app bundle to keep it small)
     useEffect(() => {
         const fetchDynamicTranslations = async () => {
             try {
-                // Skip for English as we have static file
+                // English is the default, no need to fetch
                 if (language === 'en') {
                     setDynamicTranslations({});
                     return;
@@ -38,7 +44,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
                 console.log('Fetching dynamic translations for:', language);
                 const response = await api.get(`/user/translations?lang=${language}`);
                 if (response.data) {
-                    // console.log(`Loaded ${Object.keys(response.data).length} translations`);
+                    // Update our dictionary with new words
                     setDynamicTranslations(response.data);
                 }
             } catch (error) {
@@ -54,15 +60,24 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         setLanguageState(lang);
     };
 
+    /**
+     * Translator Function (t):
+     * Takes a key (e.g., 'welcome_message') and gives back the text in the correct language.
+     * Priorities:
+     * 1. Dynamic translation from backend
+     * 2. Hardcoded translation in Translations.ts
+     * 3. Fallback to English
+     */
     const t = (key: keyof typeof Translations['en']) => {
-        // Check dynamic translations first
+        // Check dynamic updates first
         if (dynamicTranslations[key]) {
             return dynamicTranslations[key];
         }
 
+        // Check static file
         const translation = (Translations[language] as any)?.[key];
         if (!translation) {
-            // console.log(`Missing translation for ${key} in ${language}`);
+            // Missing translation? Just show English or the key itself.
         }
         return translation || Translations['en'][key] || key;
     };

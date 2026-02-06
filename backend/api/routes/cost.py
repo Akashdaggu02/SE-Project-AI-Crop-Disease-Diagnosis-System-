@@ -15,7 +15,7 @@ cost_bp = Blueprint('cost', __name__)
 def calculate_cost():
     """Calculate treatment and prevention costs"""
     try:
-        # Verify token
+        
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({'error': 'No token provided'}), 401
@@ -29,7 +29,7 @@ def calculate_cost():
         user_id = token_data['user_id']
         data = request.get_json()
         
-        # Validate input
+        
         diagnosis_id = data.get('diagnosis_id')
         land_area = data.get('land_area', type=float)
         
@@ -39,7 +39,7 @@ def calculate_cost():
         if land_area <= 0 or land_area > 10000:
             return jsonify({'error': 'Invalid land area'}), 400
         
-        # Get diagnosis details
+        
         diagnosis = db.execute_query(
             'SELECT * FROM diagnosis_history WHERE id = ? AND user_id = ?',
             (diagnosis_id, user_id)
@@ -50,7 +50,7 @@ def calculate_cost():
         
         diagnosis = diagnosis[0]
         
-        # Calculate costs
+        
         cost_data = calculate_total_cost(
             diagnosis['disease'],
             diagnosis['severity_percent'],
@@ -58,7 +58,7 @@ def calculate_cost():
             diagnosis['crop']
         )
         
-        # Save cost calculation
+        
         cost_id = db.execute_insert(
             '''INSERT INTO cost_calculations 
                (diagnosis_id, land_area, treatment_cost, prevention_cost, total_cost)
@@ -72,11 +72,11 @@ def calculate_cost():
             )
         )
         
-        # Get user's language
+        
         user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (user_id,))
         language = user[0]['preferred_language'] if user else 'en'
         
-        # Translate treatment approach if needed
+        
         if language != 'en':
             cost_data['treatment']['treatment_approach'] = translate_text(
                 cost_data['treatment'].get('treatment_approach', ''),
@@ -98,7 +98,7 @@ def calculate_cost():
 def get_cost_report(diagnosis_id):
     """Get downloadable cost report"""
     try:
-        # Verify token
+        
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({'error': 'No token provided'}), 401
@@ -111,7 +111,7 @@ def get_cost_report(diagnosis_id):
         
         user_id = token_data['user_id']
         
-        # Get cost calculation
+        
         cost_calc = db.execute_query(
             '''SELECT cc.*, dh.crop, dh.disease, dh.severity_percent, dh.stage
                FROM cost_calculations cc
@@ -125,13 +125,13 @@ def get_cost_report(diagnosis_id):
         
         cost_calc = cost_calc[0]
         
-        # Reconstruct cost data for report
+        
         cost_data = {
             'crop': cost_calc['crop'],
             'disease': cost_calc['disease'],
             'severity_level': cost_calc['stage'],
             'treatment': {
-                'pesticide_cost': cost_calc['treatment_cost'] * 0.7,  # Approximate
+                'pesticide_cost': cost_calc['treatment_cost'] * 0.7,  
                 'labor_cost': cost_calc['treatment_cost'] * 0.3,
                 'total_treatment_cost': cost_calc['treatment_cost'],
                 'applications_needed': 2 if cost_calc['severity_percent'] < 25 else 3
@@ -146,7 +146,7 @@ def get_cost_report(diagnosis_id):
             'urgency': 'high' if cost_calc['severity_percent'] > 50 else 'medium'
         }
         
-        # Generate report
+        
         report = generate_cost_report(cost_data)
         
         return jsonify({'report': report, 'cost_data': cost_data}), 200

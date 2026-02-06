@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 
+# Add the project directory to the python path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from database.db_connection import db
@@ -9,7 +10,8 @@ from config.settings import settings
 from services.language_service import translate_text
 from api.routes.user import verify_token
 
-# Try to import Gemini, but make it optional
+
+# Try to import the Google Gemini AI library
 try:
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
@@ -17,9 +19,11 @@ except ImportError:
     GEMINI_AVAILABLE = False
     genai = None
 
+# Create a blueprint for chatbot routes
 chatbot_bp = Blueprint('chatbot', __name__)
 
-# Configure Gemini API (if available)
+
+# Configure Gemini AI if we have the API key
 if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY:
     try:
         genai.configure(api_key=settings.GOOGLE_GEMINI_API_KEY)
@@ -31,17 +35,19 @@ else:
 
 def get_chatbot_response(message: str, language: str = 'en', context: str = '') -> str:
     """
-    Get chatbot response using Google Gemini or fallback
+    Get a helpful response from the chatbot using Google Gemini AI, 
+    or fall back to pre-written answers if AI isn't working.
     
     Args:
-        message: User message
-        language: Language code
-        context: Additional context about user's crops/diseases
+        message: The question asked by the user
+        language: The language they are speaking (e.g., 'hi' for Hindi)
+        context: Any extra info we know (like "User just found Early Blight on Tomato")
         
     Returns:
-        Chatbot response
+        The chatbot's answer
     """
-    # Enhanced system prompt with comprehensive agricultural knowledge
+    
+    # Tell the AI exactly how to behave - like a friendly expert farmer!
     system_prompt = f"""You are an expert agricultural assistant specializing in crop disease management for Indian farmers.
 
 **Your Expertise:** Crop Diseases (Tomato, Rice, Wheat, Cotton), Treatment Methods, Prevention Strategies, Cost-Effective Solutions, Weather-Based Advice, Organic Farming.
@@ -67,35 +73,46 @@ def get_chatbot_response(message: str, language: str = 'en', context: str = '') 
 **Response Guidelines:** Keep answers practical, provide specific dosages, include organic options, mention timing, warn about safety, suggest cost-effective solutions.
 """
     
+    # If the AI model is ready, let's use it!
     if model and settings.GOOGLE_GEMINI_API_KEY:
         try:
-            # Translate message to English if needed
+            
+            # If the user isn't speaking English, translate their question to English first
+            # The AI understands English best
             if language != 'en':
                 message_en = translate_text(message, 'en', language)
             else:
                 message_en = message
             
-            # Get response from Gemini
+            
+            # Combine the system instructions, user's question, and context into one big prompt
             full_prompt = system_prompt + "\nUser: " + message_en + "\nAssistant:"
             response = model.generate_content(full_prompt)
             answer = response.text
             
-            # Translate response back to user's language
+            
+            # If the user speaks another language, translate the AI's answer back to them
             if language != 'en':
                 answer = translate_text(answer, language, 'en')
             
             return answer
         except Exception as e:
             print(f"Gemini API error: {e}")
+            # If the AI fails, don't panic! Use the simple backup system.
             return get_fallback_response(message, language)
     else:
+        # If AI isn't configured, use the backup system
         return get_fallback_response(message, language)
 
 def get_fallback_response(message: str, language: str = 'en') -> str:
-    """Enhanced fallback responses with agricultural knowledge"""
+    """
+    A smart dictionary of pre-written agricultural advice.
+    This works even if the internet is slow or the AI is down.
+    """
     message_lower = message.lower()
     
-    # Enhanced keyword-based responses with detailed information
+    
+    # Identify keywords and pick the best pre-written response
     responses = {
         'en': {
             'tomato_early_blight': "Early Blight in tomato shows brown spots with concentric rings. Treatment: Spray Mancozeb (2g/L) or Chlorothalonil (2ml/L) every 7-10 days. Organic: Neem oil (5ml/L). Prevention: Remove infected leaves, avoid overhead watering, maintain spacing.",
@@ -111,7 +128,8 @@ def get_fallback_response(message: str, language: str = 'en') -> str:
         }
     }
     
-    # Enhanced keyword matching
+    
+    # Logic to match user keywords to the right topic
     if 'tomato' in message_lower:
         if any(word in message_lower for word in ['early blight', 'brown spot', 'ring']):
             response = responses['en']['tomato_early_blight']
@@ -136,7 +154,8 @@ def get_fallback_response(message: str, language: str = 'en') -> str:
     else:
         response = responses['en']['default']
     
-    # Translate if needed
+    
+    # Translate the backup response if needed
     if language != 'en':
         response = translate_text(response, language)
     
@@ -144,12 +163,13 @@ def get_fallback_response(message: str, language: str = 'en') -> str:
 
 @chatbot_bp.route('/message', methods=['POST'])
 def send_message():
-    """Send message to chatbot (authentication optional)"""
+    """Endpoint for the app to send messages to the chatbot (login is optional)"""
     try:
-        # Check for authentication (optional)
-        user_id = None
-        language = 'en'  # Default language
         
+        user_id = None
+        language = 'en'  
+        
+        # Check if the user is logged in via their token
         auth_header = request.headers.get('Authorization')
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]
@@ -157,7 +177,8 @@ def send_message():
             
             if token_data['valid']:
                 user_id = token_data['user_id']
-                # Get user's preferred language
+                
+                # If logged in, use their preferred language
                 user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (user_id,))
                 if user:
                     language = user[0]['preferred_language']
@@ -165,27 +186,30 @@ def send_message():
         data = request.get_json()
         message = data.get('message', '').strip()
         
-        # Allow language to be sent in request (for guest users)
+        
+        # Or if the app explicitly tells us the language, use that
         if 'language' in data:
             language = data.get('language', 'en')
         
         if not message:
             return jsonify({'error': 'Message is required'}), 400
         
-        # Get context from logged-in users OR from request body for guests
+        
         context = ''
         
-        # Check if diagnosis context is provided in request (for guest users)
+        
+        # If the user is looking at a specific diagnosis, tell the chatbot about it
         diagnosis_context = data.get('diagnosis_context')
         if diagnosis_context:
-            # Guest user providing their current diagnosis
+            
             crop = diagnosis_context.get('crop', '')
             disease = diagnosis_context.get('disease', '')
             severity = diagnosis_context.get('severity_percent', 0)
             if crop and disease:
                 context = f"User's current diagnosis: {crop} with {disease} at {severity}% severity."
         elif user_id:
-            # Logged-in user - get from database
+            
+            # Or fetch their latest diagnosis from history
             recent_diagnosis = db.execute_query(
                 '''SELECT crop, disease, severity_percent FROM diagnosis_history 
                    WHERE user_id = ? ORDER BY created_at DESC LIMIT 1''',
@@ -196,10 +220,12 @@ def send_message():
                 d = recent_diagnosis[0]
                 context = f"User's recent diagnosis: {d['crop']} with {d['disease']} at {d['severity_percent']}% severity."
         
-        # Get chatbot response
+        
+        # Get the answer!
         response_text = get_chatbot_response(message, language, context)
         
-        # Save conversation only for logged-in users
+        
+        # Save the conversation if the user is logged in
         if user_id:
             db.execute_insert(
                 '''INSERT INTO chatbot_conversations (user_id, message, response, language)
@@ -218,9 +244,9 @@ def send_message():
 
 @chatbot_bp.route('/history', methods=['GET'])
 def get_chat_history():
-    """Get chat history"""
+    """Retrieve past chat messages for a logged-in user"""
     try:
-        # Verify token
+        
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({'error': 'No token provided'}), 401
@@ -233,10 +259,11 @@ def get_chat_history():
         
         user_id = token_data['user_id']
         
-        # Get pagination
+        
         limit = request.args.get('limit', 50, type=int)
         
-        # Get chat history
+        
+        # Fetch conversations from database, newest first
         history = db.execute_query(
             '''SELECT message, response, language, created_at 
                FROM chatbot_conversations 

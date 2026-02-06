@@ -12,6 +12,10 @@ interface Pesticide {
     warnings?: string;
 }
 
+/**
+ * A handy card that displays the details of a recommended medicine.
+ * Shows if it's Organic (Safe) or Chemical (Effective but use with caution).
+ */
 const PesticideCard: React.FC<{ pesticide: Pesticide }> = ({ pesticide }) => {
     const { t } = useLanguage();
 

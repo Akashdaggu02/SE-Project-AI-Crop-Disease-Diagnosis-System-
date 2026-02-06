@@ -22,12 +22,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Authentication Provider:
+ * This acts like a bouncer at the door.
+ * It manages who is logged in, who is a guest, and remembers their session.
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isGuest, setIsGuest] = useState(false);
 
+    // When the app starts, check if we remember the user from last time
     useEffect(() => {
         loadStorageData();
     }, []);
@@ -37,11 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const storedToken = await getItem('userToken');
             const storedUser = await getItem('userData');
             if (storedToken && storedUser) {
+                // Welcome back! We know you.
                 setToken(storedToken);
                 setUser(JSON.parse(storedUser));
                 setIsGuest(false);
             } else {
-                // Default to guest if no credentials found
+                // Stranger? You can proceed as guest or log in.
                 setIsGuest(true);
             }
         } catch (e) {
@@ -52,6 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    /**
+     * Log In: Save credentials so the user stays logged in even after closing the app.
+     */
     const signIn = async (token: string, userData: User) => {
         await saveItem('userToken', token);
         await saveItem('userData', JSON.stringify(userData));
@@ -61,6 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsGuest(false);
     };
 
+    /**
+     * Log Out: Forget everything about the user session.
+     */
     const signOut = async () => {
         await deleteItem('userToken');
         await deleteItem('userData');
@@ -70,6 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsGuest(false);
     };
 
+    /**
+     * Guest Mode: The user wants to look around without an account.
+     */
     const continueAsGuest = async () => {
         await saveItem('isGuest', 'true');
         await deleteItem('userToken');
@@ -79,6 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    /**
+     * Update Profile: Changing name or language preference.
+     */
     const updateUser = async (userData: Partial<User>) => {
         if (user) {
             const updatedUser = { ...user, ...userData };

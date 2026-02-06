@@ -2,9 +2,9 @@
 Script to add missing translation keys to all languages in Translations.ts
 """
 
-# Translation keys to add for each language
+
 translations_to_add = {
-    "te": {  # Telugu
+    "te": {  
         "// Weather descriptions": "",
         "mainlyClear": "ప్రధానంగా స్పష్టంగా",
         "partlyCloudy": "పాక్షికంగా మేఘావృతం",
@@ -34,7 +34,7 @@ translations_to_add = {
         "chatbotGuestReminder": "మీ సంభాషణ చరిత్రను సేవ్ చేయడానికి సైన్ ఇన్ చేయండి",
         "chatbotError": "క్షమించండి, నేను ఇప్పుడు నా మెదడుకు కనెక్ట్ అవ్వడంలో ఇబ్బంది పడుతున్నాను.",
     },
-    "ta": {  # Tamil
+    "ta": {  
         "// Weather descriptions": "",
         "mainlyClear": "பெரும்பாலும் தெளிவாக",
         "partlyCloudy": "பகுதி மேகமூட்டம்",
@@ -64,7 +64,7 @@ translations_to_add = {
         "chatbotGuestReminder": "உங்கள் உரையாடல் வரலாற்றை சேமிக்க உள்நுழையவும்",
         "chatbotError": "மன்னிக்கவும், நான் இப்போது என் மூளையுடன் இணைப்பதில் சிக்கல் உள்ளது.",
     },
-    "kn": {  # Kannada
+    "kn": {  
         "// Weather descriptions": "",
         "mainlyClear": "ಮುಖ್ಯವಾಗಿ ಸ್ಪಷ್ಟ",
         "partlyCloudy": "ಭಾಗಶಃ ಮೋಡ",
@@ -94,7 +94,7 @@ translations_to_add = {
         "chatbotGuestReminder": "ನಿಮ್ಮ ಸಂಭಾಷಣೆ ಇತಿಹಾಸವನ್ನು ಉಳಿಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ",
         "chatbotError": "ಕ್ಷಮಿಸಿ, ನಾನು ಈಗ ನನ್ನ ಮೆದುಳಿಗೆ ಸಂಪರ್ಕಿಸಲು ತೊಂದರೆ ಅನುಭವಿಸುತ್ತಿದ್ದೇನೆ.",
     },
-    "mr": {  # Marathi
+    "mr": {  
         "// Weather descriptions": "",
         "mainlyClear": "मुख्यतः स्वच्छ",
         "partlyCloudy": "अंशतः ढगाळ",
@@ -124,7 +124,7 @@ translations_to_add = {
         "chatbotGuestReminder": "तुमचा संभाषण इतिहास जतन करण्यासाठी साइन इन करा",
         "chatbotError": "माफ करा, मला आता माझ्या मेंदूशी कनेक्ट होण्यात अडचण येत आहे.",
     },
-    "ml": {  # Malayalam
+    "ml": {  
         "// Weather descriptions": "",
         "mainlyClear": "പ്രധാനമായും തെളിഞ്ഞ",
         "partlyCloudy": "ഭാഗികമായി മേഘാവൃതം",
@@ -154,7 +154,7 @@ translations_to_add = {
         "chatbotGuestReminder": "നിങ്ങളുടെ സംഭാഷണ ചരിത്രം സംരക്ഷിക്കാൻ സൈൻ ഇൻ ചെയ്യുക",
         "chatbotError": "ക്ഷമിക്കണം, എനിക്ക് ഇപ്പോൾ എന്റെ തലച്ചോറുമായി ബന്ധപ്പെടാൻ പ്രയാസമുണ്ട്.",
     },
-    "tcy": {  # Tulu
+    "tcy": {  
         "// Weather descriptions": "",
         "mainlyClear": "ಮುಖ್ಯವಾಗಿ ಸ್ಪಷ್ಟ",
         "partlyCloudy": "ಭಾಗಶಃ ಮೇಘ",
