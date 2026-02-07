@@ -4,360 +4,175 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 
 ## ✨ Features
 
-### 🔍 Disease Detection (Epic 1)
-- Upload or capture crop images in real-time
-- Automatic disease detection with confidence scores
-- Support for multiple crops: Tomato, Rice, Wheat, Cotton
-- Handles different lighting conditions
-- Rejects blurred or low-quality images
-- Fast detection results (< 3 seconds)
+### 🔍 Disease Detection & Diagnosis
+- **Real-time Detection**: Upload or capture crop images for instant analysis.
+- **High Accuracy**: Powered by deep learning models (TensorFlow/Keras).
+- **Supported Crops**: **Grape, Maize, Potato, Rice, Tomato**.
+- **Detailed Diagnosis**: Identifies specific diseases (e.g., Late Blight, Bacterial Spot) or confirms health.
+- **Severity Estimation**: Detects the severity level of the infection.
 
-### 💊 Diagnosis & Treatment (Epic 2)
-- Recommended pesticides for detected diseases
-- Correct dosage and application frequency
-- Prevention steps to avoid recurrence
-- Organic treatment alternatives
-- Government-approved pesticide suggestions
-- Disease severity-based treatment advice
-- Weather-aware prevention tips
-- Warnings for harmful pesticide combinations
+### 💊 Treatment & Prevention
+- **Pesticide Recommendations**: Suggests effective pesticides with dosage and application instructions.
+- **Organic Alternatives**: Provides eco-friendly / organic treatment options.
+- **Prevention Tips**: actionable advice to prevent future outbreaks.
+- **Cost Calculation**: Estimates treatment costs based on land area.
 
-### 💰 Cost Calculation (Epic 3)
-- Input land area for accurate cost estimation
-- Automatic pesticide quantity calculation
-- Total treatment cost estimation
-- Prevention cost comparison
-- Severity-based cost adjustments
-- Downloadable cost summaries for loans/subsidies
+### 🌐 Multilingual Support
+- **Languages**: English, Hindi (हिंदी), Telugu (తెలుగు), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), Marathi (मराठी).
+- **Voice Support**: Text-to-speech for diagnosis results and advice.
+- **Dynamic Translation**: UI and content translated on-the-fly.
 
-### 📊 Disease Progression Tracking (Epic 4)
-- Current severity level detection
-- Early-stage infection alerts
-- Track disease spread over time
-- Visual indicators of progression
-- Upload follow-up images for comparison
-- Historical disease progression records
-
-### 🌐 Multilingual Support (Epic 5)
-- **Supported Languages**: English, Hindi, Telugu, Tamil, Kannada, Marathi
-- Diagnosis results in local language
-- Pesticide instructions translated
-- Prevention steps in local language
-- Voice output for all information
-- Play/pause/replay voice controls
-- Language preference saved automatically
-
-### 💬 Chatbot Assistance (Epic 6)
-- Ask disease-related questions
-- Explanation of diagnosis results
-- Pesticide usage guidance
-- Prevention advice
-- Multilingual chat support
-- Voice-based interaction
-- 24/7 availability
-
-### 👤 User Profile & History (Epic 7)
-- Personal farmer profile
-- Secure login and authentication
-- Past disease detection history
-- Treatment history tracking
-- Disease progression over time
-- Saved cost reports
-- Multi-device access
-- Secure data storage
+### 📱 User Experience
+- **Mobile App**: Built with React Native & Expo for iOS and Android.
+- **Offline Capable**: Essential features work with cached data.
+- **Chatbot Assistant**: AI-powered (Gemini) chatbot to answer farming queries.
+- **History**: Track past diagnoses and treatments.
 
 ## 🏗️ Technology Stack
 
-### Backend
+### Frontend (Mobile App)
+- **Framework**: [Expo](https://expo.dev/) (React Native)
+- **Language**: TypeScript
+- **Networking**: Axios
+- **UI Components**: React Native Elements, Vector Icons
+
+### Backend (API)
 - **Framework**: Flask (Python)
 - **Database**: SQLite
-- **ML Framework**: TensorFlow/Keras
+- **ML Engine**: TensorFlow / Keras
 - **Image Processing**: OpenCV
-- **Authentication**: JWT (JSON Web Tokens)
-- **Translation**: Google Translate (googletrans)
-- **Text-to-Speech**: gTTS (Google Text-to-Speech)
-- **Chatbot**: Google Gemini AI
-
-### Frontend (Mobile)
-- **Framework**: Expo + React Native (TypeScript)
-- **Navigation**: React Navigation
-- **State Management**: React Hooks
-- **API Client**: Axios
-- **Audio**: Expo AV
+- **AI Services**: Google Gemini (Chatbot), Google Translate, gTTS (Voice)
 
 ## 📁 Project Structure
 
 ```
 AI-Crop-Diagnosis/
-├── backend/
-│   ├── api/routes/          # API endpoints
-│   ├── config/              # Configuration
-│   ├── ml/                  # ML models (your existing code)
-│   ├── services/            # Business logic services
-│   ├── utils/               # Utility functions
-│   ├── app.py              # Main Flask application
-│   └── requirements.txt     # Python dependencies
-├── database/
-│   ├── seed/               # Seed data
-│   ├── db_connection.py    # Database connection
-│   └── crop_diagnosis.db   # SQLite database (auto-created)
-├── models/                  # Pre-trained H5 models
-├── frontend-mobile/         # Expo React Native app
-└── uploads/                # Uploaded images (auto-created)
+├── backend/                # Flask API & ML Logic
+│   ├── app.py              # Main Application Entry
+│   ├── api/                # API Routes (User, Diagnosis, Cost, etc.)
+│   ├── config/             # Settings & Environment Variables
+│   ├── ml/                 # Model Loading & Prediction Logic
+│   └── start_server.bat    # Script to launch backend
+├── database/               # SQLite Database & Seeds
+│   ├── seed/               # Initial Data (Pesticides, Diseases)
+│   └── crop_diagnosis.db   # (Auto-generated) Database File
+├── frontend-mobile/        # React Native Mobile App
+│   ├── app/                # Expo Router Pages
+│   ├── components/         # Reusable UI Components
+│   └── constants/          # App Constants & Styles
+├── models/                 # Pre-trained .h5 Models
+│   ├── grape_disease_model.h5
+│   ├── maize_disease_model.h5
+│   ├── potato_disease_model.h5
+│   ├── rice_disease_model.h5
+│   └── tomato_disease_model.h5
+├── training/               # Scripts used to train the models
+└── uploads/                # (Auto-generated) User Uploaded Images
 ```
 
 ## 🚀 Setup Instructions
 
 ### Prerequisites
-- Python 3.8 or higher
-- Node.js 16 or higher (for mobile app)
-- pip (Python package manager)
-- npm or yarn
+- **Node.js**: v18+ (for frontend)
+- **Python**: v3.8+ (for backend)
+- **Expo Go App**: To run on your phone.
 
-### Backend Setup
+### 1. Backend Setup
 
-1. **Navigate to backend directory**
-   ```bash
-   cd backend
-   ```
+Navigate to the `backend` directory and install dependencies:
 
-2. **Create virtual environment** (recommended)
-   ```bash
-   python -m venv venv
-   
-   # Windows
-   venv\Scripts\activate
-   
-   # Linux/Mac
-   source venv/bin/activate
-   ```
+```bash
+cd backend
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+# Create virtual environment (Optional but Recommended)
+python -m venv venv
+# Activate: `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
 
-4. **Create environment file**
-   ```bash
-   # Copy the example file
-   copy .env.example .env    # Windows
-   cp .env.example .env      # Linux/Mac
-   ```
-
-5. **Edit .env file** (optional - API keys)
-   ```
-   # Add your API keys if you have them (optional)
-   GOOGLE_GEMINI_API_KEY=your_key_here
-   WEATHER_API_KEY=your_key_here
-   ```
-
-6. **Initialize database with seed data**
-   ```bash
-   cd ../database/seed
-   python seed_database.py
-   cd ../../backend
-   ```
-
-7. **Run the server**
-   ```bash
-   python app.py
-   ```
-
-   Server will start at `http://localhost:5000`
-
-### Testing the Backend
-
-1. **Check health**
-   ```bash
-   curl http://localhost:5000/health
-   ```
-
-2. **View API documentation**
-   ```bash
-   curl http://localhost:5000/api
-   ```
-
-3. **Test disease detection** (with your sample image)
-   ```bash
-   # First register a user
-   curl -X POST http://localhost:5000/api/user/register \
-     -H "Content-Type: application/json" \
-     -d "{\"email\":\"farmer@example.com\",\"password\":\"test123\",\"name\":\"Test Farmer\"}"
-   
-   # Then login to get token
-   curl -X POST http://localhost:5000/api/user/login \
-     -H "Content-Type: application/json" \
-     -d "{\"email\":\"farmer@example.com\",\"password\":\"test123\"}"
-   
-   # Use the token to detect disease
-   curl -X POST http://localhost:5000/api/diagnosis/detect \
-     -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-     -F "image=@../sample.JPG" \
-     -F "crop=tomato"
-   ```
-
-## 📱 API Endpoints
-
-### User Management
-- `POST /api/user/register` - Register new user
-- `POST /api/user/login` - Login user
-- `GET /api/user/profile` - Get user profile (requires auth)
-- `PUT /api/user/profile` - Update profile (requires auth)
-- `PUT /api/user/language` - Update language preference (requires auth)
-
-### Disease Diagnosis
-- `POST /api/diagnosis/detect` - Detect disease from image (requires auth)
-- `GET /api/diagnosis/history` - Get diagnosis history (requires auth)
-- `GET /api/diagnosis/<id>` - Get diagnosis details (requires auth)
-- `GET /api/diagnosis/voice/<filename>` - Get voice file
-
-### Cost Calculation
-- `POST /api/cost/calculate` - Calculate treatment costs (requires auth)
-- `GET /api/cost/report/<diagnosis_id>` - Get cost report (requires auth)
-
-### Chatbot
-- `POST /api/chatbot/message` - Send message to chatbot (requires auth)
-- `GET /api/chatbot/history` - Get chat history (requires auth)
-
-## 🔑 Authentication
-
-All protected endpoints require a JWT token in the Authorization header:
-
-```
-Authorization: Bearer <your_jwt_token>
+# Install Python packages
+pip install -r requirements.txt
 ```
 
-Get the token by logging in via `/api/user/login`.
+**Configuration**:
+- Copy `.env.example` to `.env` (if available) or create a `.env` file in `backend/`.
+- Add API keys (Optional for core image/diagnosis features, required for Chatbot/Weather):
+  ```env
+  GOOGLE_GEMINI_API_KEY=your_key
+  WEATHER_API_KEY=your_key
+  SECRET_KEY=dev_secret
+  ```
+
+**Initialize Database**:
+```bash
+cd ../database/seed
+python seed_database.py
+cd ../../backend
+```
+
+**Run Server**:
+```bash
+python app.py
+# Server starts at http://localhost:5000
+```
+
+### 2. Frontend Setup
+
+Open a new terminal and navigate to `frontend-mobile`:
+
+```bash
+cd frontend-mobile
+
+# Install Node dependencies
+npm install
+
+# Start the App
+npx expo start
+```
+
+- Scan the QR code with the **Expo Go** app on your Android/iOS device.
+- Or press `a` to run on Android Emulator, `w` for Web.
 
 ## 🌍 Supported Crops & Diseases
 
-### Tomato
-- Healthy
-- Bacterial spot
-- Early blight
-- Late blight
-- Leaf Mold
-- Septoria leaf spot
-- Spider mites
-- Target Spot
-- Yellow Leaf Curl Virus
-- Tomato mosaic virus
+| Crop | Detectable Conditions |
+|------|----------------------|
+| **Grape** | Black Rot, ESCA, Leaf Blight, Healthy |
+| **Maize** | Blight, Common Rust, Gray Leaf Spot, Healthy |
+| **Potato** | Early Blight, Late Blight, Healthy |
+| **Rice** | Bacterial Leaf Blight, Brown Spot, Leaf Smut, Healthy |
+| **Tomato** | Bacterial Spot, Early/Late Blight, Leaf Mold, Septoria, Spider Mites, Target Spot, Mosaic Virus, Yellow Leaf Curl Virus, Healthy |
 
-### Rice
-- Healthy
-- Brown Spot
-- Hispa
-- Leaf Blast
+## 📱 API Endpoints
 
-### Wheat
-- Healthy
-- Brown rust
-- Yellow rust
-- Loose Smut
+Base URL: `http://localhost:5000/api`
 
-### Cotton
-- Healthy
-- Bacterial Blight
-- Curl Virus
-- Leaf Hopper Jassids
+### Auth & User
+- `POST /user/register`: Create account
+- `POST /user/login`: Get JWT token
+- `GET /user/profile`: Get user details
+- `PUT /user/language`: Update language preference
 
-## 🗣️ Supported Languages
+### Diagnosis
+- `POST /diagnosis/detect`: Upload image & crop type (`grape`, `maize`, `potato`, `rice`, `tomato`)
+- `GET /diagnosis/history`: User's diagnosis history
+- `GET /diagnosis/<id>`: Specific diagnosis details
 
-- English (en)
-- Hindi (hi) - हिंदी
-- Telugu (te) - తెలుగు
-- Tamil (ta) - தமிழ்
-- Kannada (kn) - ಕನ್ನಡ
-- Marathi (mr) - मराठी
-
-## 📊 Database Schema
-
-### Users
-- User authentication and profile information
-- Farm details and preferences
-- Language preferences
-
-### Diagnosis History
-- All disease detections
-- Images, confidence scores, severity
-- GPS coordinates (optional)
-
-### Pesticide Recommendations
-- Linked to each diagnosis
-- Dosage, frequency, cost
-- Organic alternatives
-
-### Cost Calculations
-- Treatment and prevention costs
-- Land area-based calculations
-
-### Chatbot Conversations
-- Chat history for each user
-- Multilingual support
-
-## 🔧 Configuration
-
-Edit `backend/config/settings.py` to customize:
-- File upload limits
-- Image quality thresholds
-- Cost calculation defaults
-- Severity thresholds
-- Supported languages
+### Features
+- `POST /cost/calculate`: Estimate treatment costs
+- `POST /chatbot/message`: Chat with Agri-Bot
+- `GET /weather`: Get local weather advice
 
 ## 🐛 Troubleshooting
 
-### Database Issues
-```bash
-# Delete and recreate database
-rm database/crop_diagnosis.db
-cd database/seed
-python seed_database.py
-```
+- **Server won't start?** Check if port 5000 is free or change `PORT` in `.env`.
+- **"Network Error" on App?** Ensure your phone and computer are on the **same Wi-Fi**. Update the `API_URL` in `frontend-mobile/services/api.ts` to your computer's local IP (e.g., `http://192.168.1.5:5000`).
+- **Database errors?** Delete `database/crop_diagnosis.db` and re-run `python seed_database.py`.
 
-### Module Import Errors
-```bash
-# Make sure you're in the virtual environment
-# and all dependencies are installed
-pip install -r backend/requirements.txt
-```
+## 🤝 Contributing
 
-### Port Already in Use
-```bash
-# Change PORT in backend/.env file
-PORT=5001
-```
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 📝 Notes
 
-- The system uses your existing ML models in the `models/` directory
-- No crop classification needed - users select crop type manually
-- All translations use free Google Translate library (no API key needed)
-- Voice generation uses free gTTS library
-- Chatbot works with fallback responses if no Gemini API key provided
-- Weather integration is optional (works without API key)
-
-## 🎯 Next Steps
-
-1. ✅ Backend is complete and ready to use
-2. 📱 Frontend mobile app needs to be built (React Native/Expo)
-3. 🌐 Web frontend is optional
-4. 🧪 Testing and deployment
-
-## 👨‍🌾 For Farmers
-
-This system is designed to be:
-- **Simple**: Just take a photo of your crop
-- **Fast**: Get results in seconds
-- **Accurate**: AI-powered disease detection
-- **Helpful**: Clear treatment recommendations
-- **Affordable**: Cost calculations for planning
-- **Local**: Available in your language
-- **Voice-enabled**: Listen instead of reading
-
-## 📄 License
-
-This project is for educational and agricultural support purposes.
-
-## 🤝 Support
-
-For issues or questions, please check the API documentation at `/api` endpoint.
