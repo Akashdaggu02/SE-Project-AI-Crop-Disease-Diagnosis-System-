@@ -1,178 +1,175 @@
-# 🌾 AI Crop Diagnosis System
+AI Crop Diagnosis System
+========================
 
-A comprehensive, farmer-friendly mobile and web application for crop disease detection, diagnosis, and treatment recommendations with multilingual support.
+Table of Contents
+-----------------
 
-## ✨ Features
+*   [Intro](#intro)
+*   [About](#about)
+*   [Installing and Updating](#installing-and-updating)
+    *   [Backend Setup](#backend-setup)
+    *   [Frontend Setup](#frontend-setup)
+*   [Usage](#usage)
+    *   [Running Backend](#running-backend)
+    *   [Running Frontend](#running-frontend)
+    *   [Example Diagnosis](#example-diagnosis)
+*   [Running Tests](#running-tests)
+*   [Supported Crops & Diseases](#supported-crops--diseases)
+*   [Troubleshooting](#troubleshooting)
+*   [Contributing](#contributing)
+*   [License](#license)
 
-### 🔍 Disease Detection & Diagnosis
-- **Real-time Detection**: Upload or capture crop images for instant analysis.
-- **High Accuracy**: Powered by deep learning models (TensorFlow/Keras).
-- **Supported Crops**: **Grape, Maize, Potato, Rice, Tomato**.
-- **Detailed Diagnosis**: Identifies specific diseases (e.g., Late Blight, Bacterial Spot) or confirms health.
-- **Severity Estimation**: Detects the severity level of the infection.
+Intro
+-----
 
-### 💊 Treatment & Prevention
-- **Pesticide Recommendations**: Suggests effective pesticides with dosage and application instructions.
-- **Organic Alternatives**: Provides eco-friendly / organic treatment options.
-- **Prevention Tips**: actionable advice to prevent future outbreaks.
-- **Cost Calculation**: Estimates treatment costs based on land area.
+**AI Crop Diagnosis System** allows farmers to quickly detect diseases in crops like Grape, Maize, Potato, Rice, and Tomato using deep learning models via a mobile app and web API.
 
-### 🌐 Multilingual Support
-- **Languages**: English, Hindi (हिंदी), Telugu (తెలుగు), Tamil (தமிழ்), Kannada (ಕನ್ನಡ), Marathi (मराठी).
-- **Voice Support**: Text-to-speech for diagnosis results and advice.
-- **Dynamic Translation**: UI and content translated on-the-fly.
+Example:
 
-### 📱 User Experience
-- **Mobile App**: Built with React Native & Expo for iOS and Android.
-- **Offline Capable**: Essential features work with cached data.
-- **Chatbot Assistant**: AI-powered (Gemini) chatbot to answer farming queries.
-- **History**: Track past diagnoses and treatments.
+    $ curl -X POST "http://localhost:5000/api/diagnosis/detect" \
+        -F "image=@sample.JPG" \
+        -F "crop=tomato"
 
-## 🏗️ Technology Stack
+    {
+      "disease": "Tomato_Early_Blight",
+      "confidence": 98.5,
+      "treatment": "Use Copper Fungicide..."
+    }
 
-### Frontend (Mobile App)
-- **Framework**: [Expo](https://expo.dev/) (React Native)
-- **Language**: TypeScript
-- **Networking**: Axios
-- **UI Components**: React Native Elements, Vector Icons
+Simple as that!
 
-### Backend (API)
-- **Framework**: Flask (Python)
-- **Database**: SQLite
-- **ML Engine**: TensorFlow / Keras
-- **Image Processing**: OpenCV
-- **AI Services**: Google Gemini (Chatbot), Google Translate, gTTS (Voice)
+About
+-----
 
-## 📁 Project Structure
+This project is a comprehensive, farmer-friendly mobile and web application for crop disease detection, diagnosis, and treatment recommendations with multilingual support. It leverages TensorFlow/Keras for high-accuracy disease identification and provides actionable advice, including organic alternatives and prevention tips.
 
-```
-AI-Crop-Diagnosis/
-├── backend/                # Flask API & ML Logic
-│   ├── app.py              # Main Application Entry
-│   ├── api/                # API Routes (User, Diagnosis, Cost, etc.)
-│   ├── config/             # Settings & Environment Variables
-│   ├── ml/                 # Model Loading & Prediction Logic
-│   └── start_server.bat    # Script to launch backend
-├── database/               # SQLite Database & Seeds
-│   ├── seed/               # Initial Data (Pesticides, Diseases)
-│   └── crop_diagnosis.db   # (Auto-generated) Database File
-├── frontend-mobile/        # React Native Mobile App
-│   ├── app/                # Expo Router Pages
-│   ├── components/         # Reusable UI Components
-│   └── constants/          # App Constants & Styles
-├── models/                 # Pre-trained .h5 Models
-│   ├── grape_disease_model.h5
-│   ├── maize_disease_model.h5
-│   ├── potato_disease_model.h5
-│   ├── rice_disease_model.h5
-│   └── tomato_disease_model.h5
-├── training/               # Scripts used to train the models
-└── uploads/                # (Auto-generated) User Uploaded Images
-```
+Key features include:
 
-## 🚀 Setup Instructions
+*   **Real-time Detection**: powered by deep learning models.
+*   **Multilingual Support**: English, Hindi, Telugu, Tamil, Kannada, Marathi.
+*   **Treatment Recommendations**: Pesticide & Organic options.
+*   **Chatbot Assistant**: AI-powered (Gemini) farming queries.
+*   **Offline Capability**: Essential features work without internet.
 
-### Prerequisites
-- **Node.js**: v18+ (for frontend)
-- **Python**: v3.8+ (for backend)
-- **Expo Go App**: To run on your phone.
+The system is built using:
 
-### 1. Backend Setup
+*   **Frontend**: React Native (Expo) & TypeScript.
+*   **Backend**: Python (Flask), SQLite, TensorFlow/Keras.
+*   **AI Services**: Google Gemini, Google Translate.
+
+Installing and Updating
+-----------------------
+
+To install or update the AI Crop Diagnosis System, you need to set up both the backend and frontend components.
+
+### Backend Setup
 
 Navigate to the `backend` directory and install dependencies:
 
-```bash
-cd backend
-
-# Create virtual environment (Optional but Recommended)
-python -m venv venv
-# Activate: `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
-
-# Install Python packages
-pip install -r requirements.txt
-```
+    cd backend
+    python -m venv venv
+    # Activate: `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
+    pip install -r requirements.txt
 
 **Configuration**:
-- Copy `.env.example` to `.env` (if available) or create a `.env` file in `backend/`.
-- Add API keys (Optional for core image/diagnosis features, required for Chatbot/Weather):
-  ```env
-  GOOGLE_GEMINI_API_KEY=your_key
-  WEATHER_API_KEY=your_key
-  SECRET_KEY=dev_secret
-  ```
+
+Create a `.env` file in `backend/` and add your API keys (optional for core features):
+
+    GOOGLE_GEMINI_API_KEY=your_key
+    WEATHER_API_KEY=your_key
+    SECRET_KEY=dev_secret
 
 **Initialize Database**:
-```bash
-cd ../database/seed
-python seed_database.py
-cd ../../backend
-```
 
-**Run Server**:
-```bash
-python app.py
-# Server starts at http://localhost:5000
-```
+    cd ../database/seed
+    python seed_database.py
+    cd ../../backend
 
-### 2. Frontend Setup
+### Frontend Setup
 
 Open a new terminal and navigate to `frontend-mobile`:
 
-```bash
-cd frontend-mobile
+    cd frontend-mobile
+    npm install
 
-# Install Node dependencies
-npm install
+Usage
+-----
 
-# Start the App
-npx expo start
-```
+### Running Backend
 
-- Scan the QR code with the **Expo Go** app on your Android/iOS device.
-- Or press `a` to run on Android Emulator, `w` for Web.
+To start the backend server:
 
-## 🌍 Supported Crops & Diseases
+    cd backend
+    python app.py
+    # Server starts at http://localhost:5000
+
+### Running Frontend
+
+To start the mobile application:
+
+    cd frontend-mobile
+    npx expo start
+
+*   Scan the QR code with the **Expo Go** app on your Android/iOS device.
+*   Or press `a` to run on Android Emulator, `w` for Web.
+
+### Example Diagnosis
+
+You can test the diagnosis API directly using `curl` or Postman.
+
+    $ curl -X POST "http://localhost:5000/api/diagnosis/detect" \
+        -F "image=@sample.JPG" \
+        -F "crop=potato"
+
+Running Tests
+-------------
+
+Tests are available to verify the system functionality.
+
+You can run the provided PowerShell script to test disease detection:
+
+    ./test_detection.ps1
+
+This script logs in a test user, uploads a sample image, and retrieves the diagnosis result.
+
+For unit tests:
+
+    # Backend
+    pytest
+
+    # Frontend
+    npm test
+
+Supported Crops & Diseases
+--------------------------
 
 | Crop | Detectable Conditions |
-|------|----------------------|
+| :--- | :--- |
 | **Grape** | Black Rot, ESCA, Leaf Blight, Healthy |
 | **Maize** | Blight, Common Rust, Gray Leaf Spot, Healthy |
 | **Potato** | Early Blight, Late Blight, Healthy |
 | **Rice** | Bacterial Leaf Blight, Brown Spot, Leaf Smut, Healthy |
 | **Tomato** | Bacterial Spot, Early/Late Blight, Leaf Mold, Septoria, Spider Mites, Target Spot, Mosaic Virus, Yellow Leaf Curl Virus, Healthy |
 
-## 📱 API Endpoints
+Troubleshooting
+---------------
 
-Base URL: `http://localhost:5000/api`
+If you get "Network Error" on the App, ensure your phone and computer are on the **same Wi-Fi**. Update the `API_URL` in `frontend-mobile/services/api.ts` to your computer's local IP (e.g., `http://192.168.1.5:5000`).
 
-### Auth & User
-- `POST /user/register`: Create account
-- `POST /user/login`: Get JWT token
-- `GET /user/profile`: Get user details
-- `PUT /user/language`: Update language preference
+If the server won't start, check if port 5000 is free or change `PORT` in `.env`.
 
-### Diagnosis
-- `POST /diagnosis/detect`: Upload image & crop type (`grape`, `maize`, `potato`, `rice`, `tomato`)
-- `GET /diagnosis/history`: User's diagnosis history
-- `GET /diagnosis/<id>`: Specific diagnosis details
+If you encounter database errors, delete `database/crop_diagnosis.db` and re-run `python seed_database.py`.
 
-### Features
-- `POST /cost/calculate`: Estimate treatment costs
-- `POST /chatbot/message`: Chat with Agri-Bot
-- `GET /weather`: Get local weather advice
+Contributing
+------------
 
-## 🐛 Troubleshooting
+1.  Fork the repository
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
-- **Server won't start?** Check if port 5000 is free or change `PORT` in `.env`.
-- **"Network Error" on App?** Ensure your phone and computer are on the **same Wi-Fi**. Update the `API_URL` in `frontend-mobile/services/api.ts` to your computer's local IP (e.g., `http://192.168.1.5:5000`).
-- **Database errors?** Delete `database/crop_diagnosis.db` and re-run `python seed_database.py`.
+License
+-------
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-
+[MIT License](LICENSE) (Assuming MIT, update if different)
