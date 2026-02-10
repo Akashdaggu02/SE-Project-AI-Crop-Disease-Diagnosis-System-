@@ -172,4 +172,4 @@ Contributing
 License
 -------
 
-[MIT License](LICENSE) (Assuming MIT, update if different)
+[MIT License](LICENSE) 
