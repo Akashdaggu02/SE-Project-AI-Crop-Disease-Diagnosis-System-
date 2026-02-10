@@ -27,9 +27,9 @@ python train_disease_model_v2.py --crop tomato --epochs 50 --batch-size 16 --lr 
 
 ## Features
 
-### ✅ EfficientNetB0 Architecture
-- State-of-the-art accuracy/efficiency ratio
-- Better than MobileNetV2 (3-5% accuracy improvement)
+### ✅ MobileNetV2 Architecture
+- Lightweight and efficient for mobile/edge deployment
+- Fast training with good accuracy
 - Pre-trained on ImageNet
 
 ### ✅ Advanced Data Augmentation
@@ -83,8 +83,8 @@ dataset/
 ## Backward Compatibility
 
 The updated `disease_classifier.py` automatically detects whether a model is:
-- **EfficientNetB0** (new, better accuracy)
-- **MobileNetV2** (old, still supported)
+- **MobileNetV2** (current, recommended)
+- Older architectures (still supported)
 
 No changes needed to existing code!
 

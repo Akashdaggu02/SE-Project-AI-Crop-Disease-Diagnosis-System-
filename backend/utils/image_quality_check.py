@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any
 
-def check_image_quality(image_path: str) -> Dict[str, any]:
+def check_image_quality(image_path: str) -> Dict[str, Any]:
     """
     Check if image quality is acceptable for disease detection
     
@@ -172,7 +172,7 @@ def enhance_image_quality(image_path: str, output_path: str = None) -> str:
     
     return output_path
 
-def check_content_validity(image_path: str) -> Dict[str, any]:
+def check_content_validity(image_path: str) -> Dict[str, Any]:
     """
     Check if the image content appears to be a plant/leaf based on color analysis.
     This helps reject random photos like faces, furniture, etc.
@@ -235,5 +235,8 @@ def check_content_validity(image_path: str) -> Dict[str, any]:
 
     except Exception as e:
         print(f"Error in content check: {e}")
-        
-        return {'is_valid': True, 'reason': 'Content check passed (fallback)'}
+        return {
+            'is_valid': False,
+            'reason': 'Unable to verify plant content due to an internal error',
+            'score': 0.0
+        }

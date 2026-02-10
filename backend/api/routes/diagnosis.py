@@ -88,7 +88,7 @@ def detect_disease():
         print(f"DEBUG: Crop value: '{crop}'")
         if not crop or crop not in ['grape', 'maize', 'potato', 'rice', 'tomato']:
             print(f"DEBUG: Invalid crop: '{crop}'")
-            return jsonify({'error': 'Valid crop type required (tomato, cotton)'}), 400
+            return jsonify({'error': 'Valid crop type required (grape, maize, potato, rice, tomato)'}), 400
         
         
         # Get location for weather-based advice (optional)
@@ -118,9 +118,9 @@ def detect_disease():
             
             # If dimensions are totally wrong, block it
             if 'dimensions' in quality_result and quality_result['quality_score'] == 0.0:
-                 if os.path.exists(filepath):
+                if os.path.exists(filepath):
                     os.remove(filepath)
-                 return jsonify({
+                return jsonify({
                     'error': 'Image Rejected',
                     'message': quality_result.get('reason'),
                     'details': 'Image dimensions are invalid.'
