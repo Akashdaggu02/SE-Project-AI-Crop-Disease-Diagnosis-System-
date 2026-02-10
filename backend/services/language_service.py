@@ -1,297 +1,213 @@
-from deep_translator import GoogleTranslator
-from typing import Optional, Dict
 import json
 import os
+import concurrent.futures
+from deep_translator import GoogleTranslator
+from config.settings import settings
 
-# Cache for translations to reduce API calls
-translation_cache = {}
+# Path to the translations cache file
+CACHE_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cache', 'translations_cache.json')
 
-# Load base translations from file
-TRANSLATIONS_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    'database', 'seed', 'translations.json'
-)
-
-def load_base_translations() -> Dict:
-    """Load base UI translations from file"""
+def load_cache():
+    """Load translations from the JSON cache file."""
+    if not os.path.exists(CACHE_FILE):
+        return {}
     try:
-        if os.path.exists(TRANSLATIONS_FILE):
-            with open(TRANSLATIONS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
     except Exception as e:
-        print(f"Error loading translations: {e}")
-    return {}
+        print(f"Error loading translation cache: {e}")
+        return {}
 
-base_translations = load_base_translations()
-
-def translate_text(text: str, target_language: str = 'en', source_language: str = 'en') -> str:
-    """
-    Translate text to target language using Google Translate (deep-translator)
-    """
-    # If target is same as source, return original
-    if target_language == source_language or target_language == 'en':
-        return text
-    
-    # Check cache first
-    cache_key = f"{text}_{source_language}_{target_language}"
-    if cache_key in translation_cache:
-        return translation_cache[cache_key]
-    
+def save_cache(cache):
+    """Save translations to the JSON cache file."""
     try:
-        # Translate using deep-translator
-        # It handles tokens and limits better than googletrans
-        translator = GoogleTranslator(source=source_language, target=target_language)
-        translated_text = translator.translate(text)
-        
-        # Cache the translation
-        translation_cache[cache_key] = translated_text
-        
-        return translated_text
+        os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
+        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"Translation error: {e}")
-        # Return original text if translation fails
-        return text
+        print(f"Error saving translation cache: {e}")
 
-def translate_batch(texts: Dict[str, str], target_language: str) -> Dict[str, str]:
+def get_all_translations(language):
     """
-    Translate a batch of texts to target language
+    Get all translations for a specific language from the cache.
+    Returns a dictionary of key-value pairs.
     """
-    print(f"DEBUG: translate_batch called for {target_language} with {len(texts)} texts")
-    if target_language == 'en':
-        return texts
-        
-    results = {}
+    cache = load_cache()
+    return cache.get(language, {})
+
+def translate_chunk(chunk, target_language):
+    """
+    Translate a small chunk of texts.
+    chunk: dict of {key: text}
+    """
+    translator = GoogleTranslator(source='auto', target=target_language)
+    translated_chunk = {}
+    
+    # deep_translator's translate_batch takes a list of strings
+    keys = list(chunk.keys())
+    texts = list(chunk.values())
     
     try:
-        keys = list(texts.keys())
-        values = list(texts.values())
+        # Check if texts is empty
+        if not texts:
+            return {}
+            
+        translated_texts = translator.translate_batch(texts)
         
-        # deep-translator handles batch translation efficiently
-        translator = GoogleTranslator(source='en', target=target_language)
-        
-        # Chunking to avoid timeouts or API limits with large batches
-        BATCH_SIZE = 50 
-        translations = []
-        
-        print(f"DEBUG: Starting translation of {len(values)} items in batches of {BATCH_SIZE}...")
-        
-        for i in range(0, len(values), BATCH_SIZE):
-            chunk = values[i:i + BATCH_SIZE]
-            print(f"DEBUG: Processing chunk {i//BATCH_SIZE + 1}/{(len(values)-1)//BATCH_SIZE + 1}...")
-            try:
-                # Translate chunk
-                chunk_results = translator.translate_batch(chunk)
-                translations.extend(chunk_results)
-            except Exception as chunk_error:
-                print(f"DEBUG: Chunk failed: {chunk_error}")
-                # Fallback: append original values for this failed chunk
-                translations.extend(chunk)
-        
-        print(f"DEBUG: translate_batch return type: {type(translations)}")
-        if translations:
-            print(f"DEBUG: First translated item: '{translations[0]}'")
-            print(f"DEBUG: Total items translated: {len(translations)}")
-        else:
-            print("DEBUG: translate_batch returned empty/None")
-
         for i, key in enumerate(keys):
-            # Fallback if something went wrong in matching indices
-            if i < len(translations):
-                translated_text = translations[i]
-                results[key] = translated_text
-                
-                # Check if it's the same as original (failed translation?)
-                if translated_text == values[i] and target_language != 'en':
-                     pass # print(f"DEBUG: Item {i} returned same as source")
-                
-                # Cache it
-                cache_key = f"{values[i]}_en_{target_language}"
-                translation_cache[cache_key] = translated_text
-            else:
-                results[key] = values[i]
+            translated_chunk[key] = translated_texts[i]
             
     except Exception as e:
-        print(f"Batch translation error: {e}") # Ensure this is printed
-        # Fallback to individual translation if batch fails
-        for key, text in texts.items():
-            results[key] = translate_text(text, target_language)
+        print(f"Error translating chunk: {e}")
+        # Fallback: return original text or error indicator
+        for key, text in chunk.items():
+            translated_chunk[key] = text 
             
-    return results
+    return translated_chunk
 
-def translate_diagnosis_result(result: Dict, target_language: str) -> Dict:
+def translate_batch(texts, target_language):
     """
-    Translate diagnosis result to target language
+    Translate a batch of texts using parallel processing.
+    texts: dict of {key: text} where key is the ID and text is the content to translate
+    target_language: language code (e.g., 'es', 'hi')
+    """
+    if not texts or target_language == 'en':
+        return texts
+
+    cache = load_cache()
+    if target_language not in cache:
+        cache[target_language] = {}
     
-    Args:
-        result: Diagnosis result dictionary
-        target_language: Target language code
+    language_cache = cache[target_language]
+    missing_translations = {}
+    
+    # Identify what needs to be translated
+    for key, text in texts.items():
+        if key not in language_cache:
+            missing_translations[key] = text
+            
+    if not missing_translations:
+        # All found in cache
+        return {key: language_cache.get(key, texts[key]) for key in texts}
+    
+    # Process missing translations in parallel chunks
+    # Chunk size of 5 for parallel execution as requested
+    BATCH_SIZE = 5
+    chunks = []
+    items = list(missing_translations.items())
+    
+    for i in range(0, len(items), BATCH_SIZE):
+        chunk_items = items[i:i + BATCH_SIZE]
+        chunks.append(dict(chunk_items))
         
-    Returns:
-        Translated result dictionary
+    print(f"Translating {len(missing_translations)} items in {len(chunks)} parallel batches...")
+    
+    new_translations = {}
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_chunk = {executor.submit(translate_chunk, chunk, target_language): chunk for chunk in chunks}
+        
+        for future in concurrent.futures.as_completed(future_to_chunk):
+            try:
+                result = future.result()
+                new_translations.update(result)
+            except Exception as e:
+                print(f"Chunk translation failed: {e}")
+                
+    # Update cache
+    language_cache.update(new_translations)
+    cache[target_language] = language_cache
+    save_cache(cache)
+    
+    # Return full result
+    full_result = {}
+    for key in texts:
+        full_result[key] = language_cache.get(key, texts[key])
+        
+    return full_result
+
+def translate_diagnosis_result(result, target_language):
+    """
+    Translate diagnosis result fields.
+    result: dict containing 'disease', 'stage', etc.
     """
     if target_language == 'en':
         return result
-    
-    translated = result.copy()
-    
-    # Translate disease name (keep original format for reference)
+        
+    # Fields to translate
+    fields_to_translate = {}
     if 'disease' in result:
-        translated['disease_local'] = translate_text(
-            result['disease'].replace('___', ' - ').replace('_', ' '),
-            target_language
-        )
-    
-    # Translate stage
+        fields_to_translate['disease'] = result['disease']
     if 'stage' in result:
-        translated['stage_local'] = translate_text(result['stage'], target_language)
-    
-    # Translate crop name
-    if 'crop' in result:
-        crop_names = {
-            'tomato': {'hi': 'टमाटर', 'te': 'టమాటా', 'ta': 'தக்காளி', 'kn': 'ಟೊಮೇಟೊ', 'mr': 'टोमॅटो'},
-            'rice': {'hi': 'चावल', 'te': 'వరి', 'ta': 'அரிசி', 'kn': 'ಅಕ್ಕಿ', 'mr': 'तांदूळ'},
-            'wheat': {'hi': 'गेहूं', 'te': 'గోధుమ', 'ta': 'கோதுமை', 'kn': 'ಗೋಧಿ', 'mr': 'गहू'},
-            'cotton': {'hi': 'कपास', 'te': 'పత్తి', 'ta': 'பருத்தி', 'kn': 'ಹತ್ತಿ', 'mr': 'कापूस'}
-        }
-        crop = result['crop'].lower()
-        if crop in crop_names and target_language in crop_names[crop]:
-            translated['crop_local'] = crop_names[crop][target_language]
-        else:
-            translated['crop_local'] = translate_text(crop, target_language)
-    
-    return translated
-
-def translate_disease_info(disease_info: Dict, target_language: str) -> Dict:
-    """
-    Translate disease information (description, symptoms, prevention)
-    
-    Args:
-        disease_info: Disease information dictionary
-        target_language: Target language code
+        fields_to_translate['stage'] = result['stage']
         
-    Returns:
-        Translated disease information
+    if not fields_to_translate:
+        return result
+        
+    translated = translate_batch(fields_to_translate, target_language)
+    
+    # Update result with translations
+    new_result = result.copy()
+    for key, value in translated.items():
+        new_result[key] = value
+        
+    return new_result
+
+def translate_disease_info(info, target_language):
+    """
+    Translate disease information fields.
+    info: dict containing 'description', 'symptoms', 'prevention_steps'
     """
     if target_language == 'en':
-        return disease_info
-    
-    translated = disease_info.copy()
-    
-    # Translate description
-    if 'description' in disease_info:
-        translated['description'] = translate_text(disease_info['description'], target_language)
-    
-    # Translate symptoms
-    if 'symptoms' in disease_info:
-        translated['symptoms'] = translate_text(disease_info['symptoms'], target_language)
-    
-    # Translate prevention steps
-    if 'prevention_steps' in disease_info:
-        translated['prevention_steps'] = translate_text(disease_info['prevention_steps'], target_language)
-    
-    return translated
-
-def translate_pesticide_info(pesticide_info: Dict, target_language: str) -> Dict:
-    """
-    Translate pesticide information
-    
-    Args:
-        pesticide_info: Pesticide information dictionary
-        target_language: Target language code
+        return info
         
-    Returns:
-        Translated pesticide information
-    """
-    if target_language == 'en':
-        return pesticide_info
-    
-    translated = pesticide_info.copy()
-    
-    # Translate dosage
-    if 'dosage_per_acre' in pesticide_info:
-        translated['dosage_per_acre'] = translate_text(pesticide_info['dosage_per_acre'], target_language)
-    
-    # Translate frequency
-    if 'frequency' in pesticide_info:
-        translated['frequency'] = translate_text(pesticide_info['frequency'], target_language)
-    
-    # Translate warnings
-    if 'warnings' in pesticide_info:
-        translated['warnings'] = translate_text(pesticide_info['warnings'], target_language)
-    
-    # Translate type
-    if 'type' in pesticide_info:
-        type_translations = {
-            'fungicide': {'hi': 'फफूंदनाशक', 'te': 'శిలీంద్ర నాశిని', 'ta': 'பூஞ்சைக் கொல்லி', 'kn': 'ಶಿಲೀಂಧ್ರನಾಶಕ', 'mr': 'बुरशीनाशक'},
-            'insecticide': {'hi': 'कीटनाशक', 'te': 'క్రిమి సంహారిణి', 'ta': 'பூச்சிக்கொல்லி', 'kn': 'ಕೀಟನಾಶಕ', 'mr': 'कीटकनाशक'},
-            'organic': {'hi': 'जैविक', 'te': 'సేంద్రీయ', 'ta': 'இயற்கை', 'kn': 'ಸಾವಯವ', 'mr': 'सेंद्रिय'}
-        }
-        pest_type = pesticide_info['type'].lower()
-        if pest_type in type_translations and target_language in type_translations[pest_type]:
-            translated['type_local'] = type_translations[pest_type][target_language]
-    
-    return translated
-
-def get_ui_text(key: str, language: str = 'en') -> str:
-    """
-    Get UI text in specified language
-    
-    Args:
-        key: Translation key
-        language: Language code
+    # Fields to translate
+    fields_to_translate = {}
+    if 'description' in info:
+        fields_to_translate['description'] = info['description']
+    if 'symptoms' in info:
+        fields_to_translate['symptoms'] = info['symptoms']
+    if 'prevention_steps' in info:
+        fields_to_translate['prevention_steps'] = info['prevention_steps']
         
-    Returns:
-        Translated UI text
-    """
-    if language in base_translations and key in base_translations[language]:
-        return base_translations[language][key]
-    
-    # Fallback to English
-    if 'en' in base_translations and key in base_translations['en']:
-        return base_translations['en'][key]
-    
-    # Return key if not found
-    return key
-
-def get_supported_languages() -> Dict[str, str]:
-    """Get list of supported languages"""
-    return {
-        'en': 'English',
-        'hi': 'हिंदी (Hindi)',
-        'te': 'తెలుగు (Telugu)',
-        'ta': 'தமிழ் (Tamil)',
-        'kn': 'ಕನ್ನಡ (Kannada)',
-        'mr': 'मराठी (Marathi)',
-        'ml': 'മലയാളം (Malayalam)',
-        'tcy': 'ತುಳು (Tulu)'
-    }
-
-def get_all_translations(target_language: str) -> Dict[str, str]:
-    """
-    Get all translations for a specific language.
-    Falls back to dynamic translation if key is missing.
-    """
-    english_dict = base_translations.get('en', {})
-    
-    # Start with existing manual translations
-    if target_language in base_translations:
-        result_dict = base_translations[target_language].copy()
-    else:
-        result_dict = {}
+    if not fields_to_translate:
+        return info
         
-    # Fill in missing keys
-    for key, en_text in english_dict.items():
-        if key not in result_dict:
-            # For Tulu, Google Translate doesn't support it well, fallback to English or Kannada?
-            # Using English fallback for now as per requirement or specific handling
-            if target_language == 'tcy':
-                result_dict[key] = en_text 
-            else:
-                try:
-                    # Dynamically translate
-                    translated = translate_text(en_text, target_language)
-                    result_dict[key] = translated
-                except:
-                    result_dict[key] = en_text
-                    
-    return result_dict
+    translated = translate_batch(fields_to_translate, target_language)
+    
+    # Update info with translations
+    new_info = info.copy()
+    for key, value in translated.items():
+        new_info[key] = value
+        
+    return new_info
+
+def translate_text(text, target_language, source_language='auto'):
+    """
+    Translate a single text string.
+    """
+    if not text:
+        return ""
+    if target_language == 'en' and source_language == 'en':
+        return text
+        
+    # Check cache first
+    cache = load_cache()
+    if target_language in cache and text in cache[target_language]:
+        return cache[target_language][text]
+        
+    # Translate
+    try:
+        translator = GoogleTranslator(source=source_language, target=target_language)
+        translated_text = translator.translate(text)
+        
+        # Update cache
+        if target_language not in cache:
+            cache[target_language] = {}
+        cache[target_language][text] = translated_text
+        save_cache(cache)
+        
+        return translated_text
+    except Exception as e:
+        print(f"Error translating text: {e}")
+        return text
