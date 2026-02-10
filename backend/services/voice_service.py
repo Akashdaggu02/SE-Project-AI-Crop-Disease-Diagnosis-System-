@@ -57,15 +57,18 @@ def generate_diagnosis_voice(diagnosis_result: dict, language: str = 'en') -> Op
     severity = diagnosis_result.get('severity_percent', 0)
     stage = diagnosis_result.get('stage_local', diagnosis_result.get('stage', ''))
     
+    # Check the original canonical disease label for healthy detection
+    is_healthy = diagnosis_result.get('disease', '') == 'Healthy'
+    
     # English script
     if language == 'en':
-        if 'Healthy' in disease:
+        if is_healthy:
             message = f"Good news! Your {crop} plant is healthy. No disease detected. Confidence: {confidence} percent."
         else:
             message = f"Disease detected in your {crop} plant. Disease name: {disease}. Confidence: {confidence} percent. Severity: {severity} percent. Stage: {stage}."
     else:
         # Simple localized script (just key facts)
-        if 'Healthy' in disease:
+        if is_healthy:
             message = f"{crop} {disease}। {confidence}%"
         else:
             message = f"{crop} {disease}। {confidence}%। {severity}%। {stage}"

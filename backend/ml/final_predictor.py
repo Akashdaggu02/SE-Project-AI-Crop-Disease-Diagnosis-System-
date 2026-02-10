@@ -33,7 +33,8 @@ CLASS_NAMES = {
     "rice": [
         "Bacterial leaf blight",
         "Brown spot",
-        "Leaf smut"
+        "Leaf smut",
+        "Healthy"
     ],
     "tomato": [
         "Healthy",

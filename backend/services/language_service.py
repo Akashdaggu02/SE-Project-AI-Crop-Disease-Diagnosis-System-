@@ -70,26 +70,6 @@ def translate_text(text: str, target_language: str = 'en', source_language: str 
 
 
 
-def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
-    """
-    Get all the buttons and labels for the app in the user's language.
-    """
-    if target_language == 'en':
-        return UI_LABELS_ENGLISH
-        
-    translated_labels = {}
-    for key, text in UI_LABELS_ENGLISH.items():
-        
-        # Translate each label one by one
-        translated = translate_text(text, target_language)
-        
-        
-        # Only send it back if it's actually different (saves data)
-        if translated != text:
-             translated_labels[key] = translated
-        
-    return translated_labels
-
 def translate_diagnosis_result(result: Dict, target_language: str) -> Dict:
     """
     Translate the final diagnosis report (Disease Name, Crop Name, Stage).
