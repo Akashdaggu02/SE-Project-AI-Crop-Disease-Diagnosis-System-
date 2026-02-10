@@ -42,8 +42,8 @@ def translate_text(text: str, target_language: str = 'en', source_language: str 
         The translated words
     """
     
-    # If no change needed, just return the text
-    if target_language == source_language or target_language == 'en':
+    # If no change needed, or there's no text, just return the text
+    if not text or target_language == source_language:
         return text
     
     
