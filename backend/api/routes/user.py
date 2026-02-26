@@ -54,8 +54,8 @@ def register():
         
         # Check if this email is already taken
         existing_user = db.execute_query(
-            collection='users',
-            mongo_query={'email': data['email']}
+            'SELECT id FROM users WHERE email = ?',
+            (data['email'],)
         )
         
         if existing_user:
@@ -69,17 +69,17 @@ def register():
         
         # Save the new user to the database
         user_id = db.execute_insert(
-            collection='users',
-            document={
-                'email': data['email'],
-                'password_hash': password_hash,
-                'name': data['name'],
-                'phone': data.get('phone', ''),
-                'farm_location': data.get('farm_location', ''),
-                'farm_size': data.get('farm_size', 0),
-                'preferred_language': data.get('preferred_language', 'en'),
-                'created_at': datetime.datetime.utcnow()
-            }
+            '''INSERT INTO users (email, password_hash, name, phone, farm_location, farm_size, preferred_language)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (
+                data['email'],
+                password_hash,
+                data['name'],
+                data.get('phone', ''),
+                data.get('farm_location', ''),
+                data.get('farm_size', 0),
+                data.get('preferred_language', 'en')
+            )
         )
         
         # Create a token immediately so they are logged in right after signing up
@@ -105,11 +105,11 @@ def login():
         
         # Find the user by their email
         user = db.execute_query(
-            collection='users',
-            mongo_query={'email': data['email']}
+            'SELECT id, email, password_hash, name, preferred_language FROM users WHERE email = ?',
+            (data['email'],)
         )
         
-        if not user or len(user) == 0:
+        if not user:
             return jsonify({'error': 'Invalid email or password'}), 401
         
         user = user[0]
@@ -118,17 +118,17 @@ def login():
         if not bcrypt.checkpw(data['password'].encode('utf-8'), user['password_hash'].encode('utf-8')):
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        # Create a fresh token for this session (Cast to string in case user_id is passed as ObjectId)
-        token = generate_token(str(user.get('_id') or user.get('id')))
+        # Create a fresh token for this session
+        token = generate_token(user['id'])
         
         return jsonify({
             'message': 'Login successful',
             'token': token,
             'user': {
-                'id': str(user.get('_id') or user.get('id')),
-                'email': user.get('email'),
-                'name': user.get('name'),
-                'preferred_language': user.get('preferred_language')
+                'id': user['id'],
+                'email': user['email'],
+                'name': user['name'],
+                'preferred_language': user['preferred_language']
             }
         }), 200
         
@@ -150,35 +150,29 @@ def get_profile():
         if not token_data['valid']:
             return jsonify({'error': token_data['error']}), 401
         
-        from bson.errors import InvalidId
-        from bson.objectid import ObjectId
-
-        try:
-            query = {'_id': ObjectId(token_data['user_id'])}
-        except InvalidId:
-            query = {'id': token_data['user_id']}
-
         # Fetch the user's details from the database
         user = db.execute_query(
-            collection='users',
-            mongo_query=query
+            '''SELECT id, email, name, phone, farm_location, farm_size, 
+                      preferred_language, created_at 
+               FROM users WHERE id = ?''',
+            (token_data['user_id'],)
         )
         
-        if not user or len(user) == 0:
+        if not user:
             return jsonify({'error': 'User not found'}), 404
-            
+        
         user = user[0]
         
         return jsonify({
             'user': {
-                'id': str(user.get('_id') or user.get('id')),
-                'email': user.get('email'),
-                'name': user.get('name'),
-                'phone': user.get('phone', ''),
-                'farm_location': user.get('farm_location', ''),
-                'farm_size': user.get('farm_size', 0),
-                'preferred_language': user.get('preferred_language', 'en'),
-                'created_at': user.get('created_at')
+                'id': user['id'],
+                'email': user['email'],
+                'name': user['name'],
+                'phone': user['phone'],
+                'farm_location': user['farm_location'],
+                'farm_size': user['farm_size'],
+                'preferred_language': user['preferred_language'],
+                'created_at': user['created_at']
             }
         }), 200
         
@@ -202,25 +196,18 @@ def update_profile():
         
         data = request.get_json()
         
-        from bson.errors import InvalidId
-        from bson.objectid import ObjectId
-
-        try:
-            query = {'_id': ObjectId(token_data['user_id'])}
-        except InvalidId:
-            query = {'id': token_data['user_id']}
-            
         # Update the database with new info
         db.execute_update(
-            collection='users',
-            mongo_query=query,
-            update={
-                'name': data.get('name'),
-                'phone': data.get('phone', ''),
-                'farm_location': data.get('farm_location', ''),
-                'farm_size': data.get('farm_size', 0),
-                'updated_at': datetime.datetime.utcnow()
-            }
+            '''UPDATE users 
+               SET name = ?, phone = ?, farm_location = ?, farm_size = ?, updated_at = CURRENT_TIMESTAMP
+               WHERE id = ?''',
+            (
+                data.get('name'),
+                data.get('phone', ''),
+                data.get('farm_location', ''),
+                data.get('farm_size', 0),
+                token_data['user_id']
+            )
         )
         
         return jsonify({'message': 'Profile updated successfully'}), 200
@@ -249,22 +236,10 @@ def update_language():
         if not validate_language(language):
             return jsonify({'error': 'Unsupported language'}), 400
         
-        from bson.errors import InvalidId
-        from bson.objectid import ObjectId
-
-        try:
-            query = {'_id': ObjectId(token_data['user_id'])}
-        except InvalidId:
-            query = {'id': token_data['user_id']}
-
         # Save preference to DB
         db.execute_update(
-            collection='users',
-            mongo_query=query,
-            update={
-                'preferred_language': language,
-                'updated_at': datetime.datetime.utcnow()
-            }
+            'UPDATE users SET preferred_language = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            (language, token_data['user_id'])
         )
         
         return jsonify({'message': 'Language updated successfully', 'language': language}), 200
@@ -285,17 +260,9 @@ def get_translations():
                 token = auth_header.split(' ')[1]
                 token_data = verify_token(token)
                 if token_data['valid']:
-                    from bson.errors import InvalidId
-                    from bson.objectid import ObjectId
-
-                    try:
-                        query = {'_id': ObjectId(token_data['user_id'])}
-                    except InvalidId:
-                        query = {'id': token_data['user_id']}
-                        
-                    user = db.execute_query(collection='users', mongo_query=query)
+                    user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (token_data['user_id'],))
                     if user:
-                        language = user[0].get('preferred_language', language)
+                        language = user[0]['preferred_language']
         
         # Fetch the translations
         translations = get_translated_ui_labels(language)

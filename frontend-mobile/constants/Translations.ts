@@ -44,7 +44,6 @@ export const Translations = {
         crop_corn: "Corn",
         crop_grape: "Grape",
         crop_maize: "Maize",
-        crop_auto: "Auto Detect (AI)",
         analyzeDisease: "Analyze Disease",
         tipsTitle: "📸 Tips for Best Results:",
         tip1: "• Ensure good lighting (natural light works best)",
@@ -305,7 +304,6 @@ export const Translations = {
         crop_maize: "मक्का",
         crop_potato: "आलू",
         crop_rice: "चावल",
-        crop_auto: "ऑटो डिटेक्ट (स्वचालित)",
         tipsTitle: "📸 सर्वोत्तम परिणामों के लिए सुझाव:",
         tip1: "• अच्छी रोशनी सुनिश्चित करें (प्राकृतिक प्रकाश सबसे अच्छा है)",
         tip2: "• प्रभावित पत्ती पर स्पष्ट रूप से ध्यान केंद्रित करें",
@@ -545,7 +543,6 @@ export const Translations = {
         crop_maize: "మొక్కజొన్న",
         crop_potato: "బంగాళాదుంప",
         crop_rice: "వరి",
-        crop_auto: "ఆటో డిటెక్ట్",
         crop_wheat: "గోధుమ",
         crop_cotton: "పత్తి",
 
@@ -789,7 +786,6 @@ export const Translations = {
         crop_maize: "சோளம்",
         crop_potato: "உருளைக்கிழங்கு",
         crop_rice: "அரிசி",
-        crop_auto: "தானியங்கி கண்டறிதல்",
         crop_wheat: "கோதுமை",
 
         weatherLoading: "ஏற்றுகிறது...",
