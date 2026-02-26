@@ -8,7 +8,7 @@ import { Camera as CameraIcon, Image as ImageIcon, X, ShieldAlert, Sun, CloudRai
 
 // --- Internal Imports ---
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import api, { API_URL } from '../../services/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { T } from '../../components/ui/T';
 import { addToLocalHistory } from '../../services/localHistory';
@@ -19,6 +19,7 @@ const { width } = Dimensions.get('window');
 // These are the crops our AI knows how to diagnose.
 // Ideally, this list mimics what the backend supports.
 const CROP_OPTIONS = [
+  { id: 'auto', name: 'Auto Detect (AI)', image: require('../../assets/images/icon.png') },
   { id: 'tomato', name: 'Tomato', image: require('../../assets/images/tomato.png') },
   { id: 'rice', name: 'Rice', image: require('../../assets/images/rice.png') },
   { id: 'potato', name: 'Potato', image: require('../../assets/images/potato.png') },
@@ -327,6 +328,7 @@ export default function DashboardScreen() {
 
   // 5. The Main Action: Diagnose!
   const handleDiagnose = async () => {
+    console.log('DEBUG: handleDiagnose called. Image URI:', image);
     if (!image) return;
     await performDiagnosis();
   };
@@ -334,9 +336,8 @@ export default function DashboardScreen() {
   // 6. Diagnosis Logic (Sending to Backend)
   const performDiagnosis = async () => {
     if (!image) return;
-
+    console.log('DEBUG: performDiagnosis starting...');
     setLoading(true); // Show spinner
-
     try {
       let response;
 
@@ -344,34 +345,32 @@ export default function DashboardScreen() {
         // --- Web Logic ---
         // On web, we have to convert the image URI to a Blob to send it.
         const blob = await fetch(image).then(r => r.blob());
-        const formData = new FormData();
-        formData.append('image', blob, 'photo.jpg');
-        formData.append('crop', selectedCrop);
-        formData.append('language', language);
+        const webFormData = new FormData();
+        webFormData.append('image', blob, 'photo.jpg');
+        webFormData.append('crop', selectedCrop);
+        webFormData.append('language', language);
 
-        // Add context for better AI accuracy
         if (location) {
-          formData.append('latitude', location.latitude.toString());
-          formData.append('longitude', location.longitude.toString());
+          webFormData.append('latitude', location.latitude.toString());
+          webFormData.append('longitude', location.longitude.toString());
         }
 
-        // Add language so the backend replies in the right language
-        formData.append('language', language);
-
-        const apiUrl = 'http://localhost:5000/api/diagnosis/detect';
-        // Get token to send along with the request so the backend knows who we are
+        const apiUrl = `${API_URL}diagnosis/detect`;
         const { getItem } = await import('../../services/storage');
         const token = await getItem('userToken');
 
+        console.log('DEBUG: Sending web request to API...', apiUrl);
         const fetchResponse = await fetch(apiUrl, {
           method: 'POST',
-          body: formData,
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          body: webFormData,
+          headers: {
+            'Bypass-Tunnel-Reminder': 'true',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
         });
 
         if (!fetchResponse.ok) {
           const errorData = await fetchResponse.json();
-          // Create a custom error to handle it in the catch block
           const customError: any = new Error(errorData.error || 'Failed to detect disease');
           customError.response = {
             status: fetchResponse.status,
@@ -382,39 +381,54 @@ export default function DashboardScreen() {
 
         response = { data: await fetchResponse.json() };
       } else {
+        console.log('DEBUG: Constructing mobile FormData...');
         // --- Mobile Logic ---
-        // On phones, it's easier. We just construct the FormData with the URI.
-        const formData = new FormData();
+        const mobileFormData = new FormData();
         const uriParts = image.split('.');
-        const fileType = uriParts[uriParts.length - 1];
+        const fileType = uriParts[uriParts.length - 1] === 'jpg' ? 'jpeg' : uriParts[uriParts.length - 1];
 
-        formData.append('image', {
+        mobileFormData.append('image', {
           uri: image,
           name: `photo.${fileType}`,
           type: `image/${fileType}`,
         } as any);
-        formData.append('crop', selectedCrop);
-        formData.append('language', language);
+        mobileFormData.append('crop', selectedCrop);
+        mobileFormData.append('language', language);
 
-        // Add context
         if (location) {
-          formData.append('latitude', location.latitude.toString());
-          formData.append('longitude', location.longitude.toString());
+          mobileFormData.append('latitude', location.latitude.toString());
+          mobileFormData.append('longitude', location.longitude.toString());
         }
 
-        response = await api.post('diagnosis/detect', formData, {
+        const apiUrl = `${API_URL}diagnosis/detect`;
+        const { getItem } = await import('../../services/storage');
+        const token = await getItem('userToken');
+
+        console.log('DEBUG: Sending mobile request to API using fetch...', apiUrl);
+
+        const fetchResponse = await fetch(apiUrl, {
+          method: 'POST',
+          body: mobileFormData,
           headers: {
-            // Let Axios set the Content-Type with boundary automatically
-            // But we explicitly need 'Content-Type': 'multipart/form-data' for some RN versions? 
-            // Actually, best practice is usually to let it be. 
-            // IF this breaks, we will revert.
-            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
+            'Bypass-Tunnel-Reminder': 'true',
+            // DO NOT set Content-Type header manually when using FormData with fetch in React Native! 
+            // The browser/React Native will automatically set it with the correct boundary.
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
-          transformRequest: (data, headers) => {
-            // Hack to ensure Authorization header isn't lost if Axios creates a new header object
-            return data;
-          }
         });
+
+        if (!fetchResponse.ok) {
+          const errorData = await fetchResponse.json().catch(() => ({ error: 'Server returned ' + fetchResponse.status }));
+          const customError: any = new Error(errorData.error || errorData.message || 'Failed to detect disease');
+          customError.response = {
+            status: fetchResponse.status,
+            data: errorData
+          };
+          throw customError;
+        }
+
+        response = { data: await fetchResponse.json() };
       }
 
       // --- Success! ---
@@ -449,7 +463,16 @@ export default function DashboardScreen() {
     } catch (error: any) {
       console.log('=== Diagnosis Error Debug ===');
       console.log('Error object:', error);
-      // ... debug logs ...
+      console.log('Error message:', error.message);
+      console.log('Error code:', error.code);
+      console.log('API URL used:', API_URL);
+      if (error.response) {
+        console.log('Response status:', error.response.status);
+        console.log('Response data:', JSON.stringify(error.response.data));
+      } else {
+        console.log('No response received - likely a network/connection issue');
+        console.log('Is network error:', error.code === 'ERR_NETWORK');
+      }
 
       // --- Error Handling ---
       const errData = error.response?.data;
@@ -463,6 +486,13 @@ export default function DashboardScreen() {
             { text: t('retakePhoto'), onPress: () => setImage(null), style: 'default' },
             { text: t('cancel'), style: 'cancel' }
           ]
+        );
+      } else if (!error.response) {
+        // Pure network error - show more helpful message
+        console.log('❌ Network error - cannot reach backend at', API_URL);
+        Alert.alert(
+          t('error'),
+          `Cannot connect to server.\nTrying: ${API_URL}\n\nPlease ensure the server is running.`
         );
       } else {
         // This is a "bad" error - something actually broke.
@@ -695,7 +725,7 @@ export default function DashboardScreen() {
       <View style={styles.section}>
         <T style={styles.sectionTitle}>supportedCrops</T>
         <View style={styles.grid}>
-          {CROP_OPTIONS.map((crop) => (
+          {CROP_OPTIONS.filter(crop => crop.id !== 'auto').map((crop) => (
             <View key={crop.id} style={styles.gridItem}>
               <View style={styles.gridIconImage}>
                 <Image source={crop.image} style={styles.cropImage} />
