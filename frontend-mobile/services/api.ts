@@ -3,15 +3,22 @@ import { getItem } from './storage';
 import { Platform } from 'react-native';
 
 /**
- * This is our phone line to the Server (Backend).
- * If we are testing on an Android Emulator, we use a special IP (10.0.2.2).
- * If on Web or iOS Simulator, localhost is fine.
+ * BACKEND CONNECTION CONFIGURATION
+ *
+ * For LAN mode (npx expo start) - your phone must be on the same Wi-Fi as your PC.
+ * The IP address must match your PC's current Wi-Fi IP (run 'ipconfig' to check).
+ *
+ * Current LAN IP: 10.163.32.227
  */
-export const API_URL = 'http://10.12.234.242:5000/api/';
+export const BACKEND_HOST = '10.163.32.227';
+export const BACKEND_PORT = 5000;
+export const API_URL = Platform.OS === 'web'
+    ? `http://localhost:${BACKEND_PORT}/api/`
+    : `https://floppy-numbers-boil.loca.lt/api/`; // Public tunnel to bypass WiFi isolation
 
 const api = axios.create({
     baseURL: API_URL,
-
+    timeout: 30000, // 30 second timeout
 });
 
 /**
@@ -20,6 +27,9 @@ const api = axios.create({
  */
 api.interceptors.request.use(
     async (config) => {
+        // Bypass localtunnel reminder page
+        config.headers['Bypass-Tunnel-Reminder'] = 'true';
+
         const token = await getItem('userToken');
         console.log(`[API] Request to ${config.url} | Token exists: ${!!token}`);
         if (token) {
