@@ -17,6 +17,7 @@ from services.voice_service import generate_diagnosis_voice
 from services.pesticide_service import get_severity_based_recommendations
 from services.cost_service import calculate_total_cost
 from services.weather_service import get_weather_data, get_weather_based_advice
+from services.crop_id_service import identify_crop_from_image
 from api.routes.user import verify_token
 
 
@@ -37,6 +38,8 @@ def detect_disease():
     The main feature: Detect disease from an uploaded image!
     Users can be logged in or anonymous.
     """
+    print(f"\n--- INCOMING DIAGNOSIS REQUEST ---")
+    print(f"Time: {datetime.datetime.now()}")
     try:
         
         user_id = None
@@ -56,10 +59,17 @@ def detect_disease():
             if token_data['valid']:
                 user_id = token_data['user_id']
                 
+                from bson.objectid import ObjectId
+                from bson.errors import InvalidId
+                try:
+                    query = {'_id': ObjectId(user_id)}
+                except InvalidId:
+                    query = {'id': user_id}
+
                 # Use their preferred language if found
-                user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (user_id,))
+                user = db.execute_query(collection='users', mongo_query=query)
                 if user:
-                    language = user[0]['preferred_language']
+                    language = user[0].get('preferred_language', 'en')
         
         
         # If the app explicitly sets a language (e.g., user switched it temporarily), use that
@@ -86,9 +96,13 @@ def detect_disease():
         # Identify the crop (e.g., tomato, rice)
         crop = request.form.get('crop', '').lower()
         print(f"DEBUG: Crop value: '{crop}'")
-        if not crop or crop not in ['grape', 'maize', 'potato', 'rice', 'tomato']:
+        
+        # Define valid crops including special 'auto' mode
+        supported_crops = ['grape', 'maize', 'potato', 'rice', 'tomato', 'wheat', 'cotton']
+        
+        if not crop or (crop not in supported_crops and crop != 'auto'):
             print(f"DEBUG: Invalid crop: '{crop}'")
-            return jsonify({'error': 'Valid crop type required (tomato, cotton)'}), 400
+            return jsonify({'error': f'Valid crop type required ({", ".join(supported_crops)}) or "auto"'}), 400
         
         
         # Get location for weather-based advice (optional)
@@ -103,6 +117,26 @@ def detect_disease():
         filename = f"{user_prefix}{timestamp}_{filename}"
         filepath = os.path.join(settings.UPLOAD_FOLDER, filename)
         file.save(filepath)
+        print(f"DEBUG: Saved file to {filepath}")
+        
+        # --- AUTO CROP IDENTIFICATION ---
+        if crop == 'auto':
+            print("DEBUG: Auto-crop mode enabled. Identifying crop from image...")
+            identified_crop = identify_crop_from_image(filepath)
+            if identified_crop:
+                print(f"DEBUG: Successfully identified crop: {identified_crop}")
+                crop = identified_crop
+            else:
+                # Fallback or error if identification fails
+                print("DEBUG: Auto-crop identification failed.")
+                # If we can't identify, we can't diagnose accurately with local ML
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return jsonify({
+                    'error': 'Crop Identification Failed',
+                    'message': 'We could not automatically identify the crop in this image.',
+                    'details': 'Please select the crop manually or try a clearer photo.'
+                }), 400
         
         
         # --- QUALITY CHECKS ---
@@ -193,8 +227,8 @@ def detect_disease():
         disease_data = {}
         try:
             disease_info = db.execute_query(
-                'SELECT * FROM diseases WHERE crop = ? AND disease_name = ?',
-                (crop, prediction_result['disease'])
+                collection='diseases',
+                mongo_query={'crop': crop, 'disease_name': prediction_result['disease']}
             )
             
             if disease_info:
@@ -259,38 +293,35 @@ def detect_disease():
         try:
             if user_id:
                 diagnosis_id = db.execute_insert(
-                    '''INSERT INTO diagnosis_history 
-                       (user_id, crop, disease, confidence, severity_percent, stage, image_path, latitude, longitude)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    (
-                        user_id,
-                        crop,
-                        prediction_result['disease'],
-                        prediction_result['confidence'],
-                        prediction_result['severity_percent'],
-                        prediction_result['stage'],
-                        filepath,
-                        latitude,
-                        longitude
-                    )
+                    collection='diagnosis_history',
+                    document={
+                        'user_id': user_id,
+                        'crop': crop,
+                        'disease': prediction_result['disease'],
+                        'confidence': prediction_result['confidence'],
+                        'severity_percent': prediction_result['severity_percent'],
+                        'stage': prediction_result['stage'],
+                        'image_path': filepath,
+                        'latitude': latitude,
+                        'longitude': longitude,
+                        'created_at': datetime.datetime.utcnow()
+                    }
                 )
-                
                 
                 # Also save the recommended pesticides for future reference
                 for pesticide in pesticide_recommendations.get('recommended_pesticides', [])[:3]:
                     db.execute_insert(
-                        '''INSERT INTO pesticide_recommendations 
-                           (diagnosis_id, pesticide_name, dosage, frequency, cost_per_unit, is_organic, warnings)
-                           VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                        (
-                            diagnosis_id,
-                            pesticide['name'],
-                            pesticide['dosage_per_acre'],
-                            pesticide['frequency'],
-                            pesticide['cost_per_liter'],
-                            pesticide['is_organic'],
-                            pesticide['warnings']
-                        )
+                        collection='pesticide_recommendations',
+                        document={
+                            'diagnosis_id': diagnosis_id,
+                            'pesticide_name': pesticide['name'],
+                            'dosage': pesticide['dosage_per_acre'],
+                            'frequency': pesticide['frequency'],
+                            'cost_per_unit': pesticide['cost_per_liter'],
+                            'is_organic': pesticide['is_organic'],
+                            'warnings': pesticide['warnings'],
+                            'created_at': datetime.datetime.utcnow()
+                        }
                     )
         except Exception as e:
             print(f"DEBUG: Error saving to history: {e}")
@@ -356,29 +387,37 @@ def get_history():
         
         # Fetch records from the database
         history = db.execute_query(
-            '''SELECT * FROM diagnosis_history 
-               WHERE user_id = ? 
-               ORDER BY created_at DESC 
-               LIMIT ? OFFSET ?''',
-            (user_id, per_page, offset)
+            collection='diagnosis_history',
+            mongo_query={'user_id': user_id}
         )
+        # Handle pagination in-memory for simplicity or update execute_query to support it.
+        # Sorting by created_at DESC
+        history.sort(key=lambda x: x.get('created_at', datetime.datetime.min), reverse=True)
+        history = history[offset : offset + per_page]
         
         
         language = 'en'
-        user = db.execute_query('SELECT preferred_language FROM users WHERE id = ?', (user_id,))
+        from bson.objectid import ObjectId
+        from bson.errors import InvalidId
+        try:
+            query = {'_id': ObjectId(user_id)}
+        except InvalidId:
+            query = {'id': user_id}
+
+        user = db.execute_query(collection='users', mongo_query=query)
         if user:
-            language = user[0]['preferred_language']
+            language = user[0].get('preferred_language', 'en')
 
         history_list = []
         for record in history:
             item = {
-                'id': record['id'],
-                'crop': record['crop'],
-                'disease': record['disease'],
-                'confidence': record['confidence'],
-                'severity_percent': record['severity_percent'],
-                'stage': record['stage'],
-                'created_at': record['created_at']
+                'id': str(record.get('_id') or record.get('id')),
+                'crop': record.get('crop'),
+                'disease': record.get('disease'),
+                'confidence': record.get('confidence'),
+                'severity_percent': record.get('severity_percent'),
+                'stage': record.get('stage'),
+                'created_at': record.get('created_at')
             }
             
             
@@ -418,9 +457,16 @@ def get_diagnosis_details(diagnosis_id):
         user_id = token_data['user_id']
         
         
+        from bson.objectid import ObjectId
+        from bson.errors import InvalidId
+        try:
+            query = {'_id': ObjectId(diagnosis_id), 'user_id': user_id}
+        except InvalidId:
+            query = {'id': diagnosis_id, 'user_id': user_id}
+
         diagnosis = db.execute_query(
-            'SELECT * FROM diagnosis_history WHERE id = ? AND user_id = ?',
-            (diagnosis_id, user_id)
+            collection='diagnosis_history',
+            mongo_query=query
         )
         
         if not diagnosis:
@@ -431,8 +477,8 @@ def get_diagnosis_details(diagnosis_id):
         
         # Fetch the pesticides we recommended back then
         pesticides = db.execute_query(
-            'SELECT * FROM pesticide_recommendations WHERE diagnosis_id = ?',
-            (diagnosis_id,)
+            collection='pesticide_recommendations',
+            mongo_query={'diagnosis_id': str(diagnosis_id)}
         )
         
         pesticide_list = []
@@ -449,8 +495,8 @@ def get_diagnosis_details(diagnosis_id):
         
         # Fetch cost calculations if they were made
         cost_data = db.execute_query(
-            'SELECT * FROM cost_calculations WHERE diagnosis_id = ?',
-            (diagnosis_id,)
+            collection='cost_calculations',
+            mongo_query={'diagnosis_id': str(diagnosis_id)}
         )
         
         cost_info = None
@@ -464,13 +510,13 @@ def get_diagnosis_details(diagnosis_id):
         
         response = {
             'diagnosis': {
-                'id': diagnosis['id'],
-                'crop': diagnosis['crop'],
-                'disease': diagnosis['disease'],
-                'confidence': diagnosis['confidence'],
-                'severity_percent': diagnosis['severity_percent'],
-                'stage': diagnosis['stage'],
-                'created_at': diagnosis['created_at']
+                'id': str(diagnosis.get('_id') or diagnosis.get('id')),
+                'crop': diagnosis.get('crop'),
+                'disease': diagnosis.get('disease'),
+                'confidence': diagnosis.get('confidence'),
+                'severity_percent': diagnosis.get('severity_percent'),
+                'stage': diagnosis.get('stage'),
+                'created_at': diagnosis.get('created_at')
             },
             'pesticides': pesticide_list,
             'cost': cost_info
