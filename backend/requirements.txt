@@ -15,5 +15,6 @@ werkzeug==3.0.1
 matplotlib
 
 pytest
+
 gunicorn==21.2.0
 pymongo==4.4.0
