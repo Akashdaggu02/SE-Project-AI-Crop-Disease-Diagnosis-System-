@@ -27,8 +27,7 @@ chatbot_bp = Blueprint('chatbot', __name__)
 if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY:
     try:
         genai.configure(api_key=settings.GOOGLE_GEMINI_API_KEY)
-        # Gemma 3 12B — used for both text chat and crop identification
-        gemma_model = genai.GenerativeModel('gemma-3-12b-it')
+        gemma_model = genai.GenerativeModel('gemma-3-27b-it')
     except:
         gemma_model = None
 else:

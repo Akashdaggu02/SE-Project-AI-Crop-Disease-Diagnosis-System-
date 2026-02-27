@@ -99,12 +99,13 @@ export default function ChatScreen() {
             const formData = new FormData();
 
             if (Platform.OS !== 'web') {
-                const uriParts = uri.split('.');
-                const fileExtension = uriParts[uriParts.length - 1];
+                const uriParts = uri.split('/');
+                const fileName = uriParts[uriParts.length - 1];
+                const fileExtension = fileName.split('.').pop();
 
                 formData.append('image', {
                     uri: uri,
-                    name: `upload.${fileExtension}`,
+                    name: fileName || `upload.${fileExtension}`,
                     type: type === 'video' ? `video/${fileExtension}` : `image/${fileExtension}`,
                 } as any);
             } else {
