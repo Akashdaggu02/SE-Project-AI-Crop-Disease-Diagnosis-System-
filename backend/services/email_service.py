@@ -87,9 +87,8 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         msg.attach(MIMEText(plain_text, 'plain'))
         msg.attach(MIMEText(body_html, 'html'))
 
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, 465) as server:
             server.ehlo()
-            server.starttls()
             server.login(settings.SMTP_USER, settings.SMTP_PASS)
             server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
 
