@@ -87,17 +87,46 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         msg.attach(MIMEText(plain_text, 'plain'))
         msg.attach(MIMEText(body_html, 'html'))
 
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASS)
-            server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+        # Try port 465 (SSL) first — required on Render (port 587 is blocked)
+        # Fall back to port 587 (STARTTLS) for other environments
+        sent = False
+        last_error = None
 
-        print(f"[EmailService] OTP email sent to {to_email} (purpose: {purpose})")
+        for attempt, (use_ssl, port) in enumerate([(True, 465), (False, 587)], 1):
+            try:
+                if use_ssl:
+                    with smtplib.SMTP_SSL(settings.SMTP_HOST, port, timeout=10) as server:
+                        server.ehlo()
+                        server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                        server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+                else:
+                    with smtplib.SMTP(settings.SMTP_HOST, port, timeout=10) as server:
+                        server.ehlo()
+                        server.starttls()
+                        server.ehlo()
+                        server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                        server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+                sent = True
+                print(f"[EmailService] OTP sent to {to_email} via port {port} (purpose: {purpose}) (attempt {attempt})")
+                break
+            except Exception as e:
+                last_error = e
+                print(f"[EmailService] Port {port} failed: {type(e).__name__}: {e}")
+
+        if not sent:
+            print(f"[EmailService] All SMTP attempts failed. Last error: {last_error}")
+            return False
+
         return True
 
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[EmailService] SMTP Authentication failed - check SMTP_USER and SMTP_PASS: {e}")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"[EmailService] SMTP error: {e}")
+        return False
     except Exception as e:
-        print(f"[EmailService] Failed to send email: {e}")
+        print(f"[EmailService] Unexpected error sending email: {type(e).__name__}: {e}")
         return False
 
 
