@@ -288,6 +288,11 @@ def detect_disease():
             weather_advice = None
         
         
+        # Translate the prediction labels (like "Healthy" or "Early Blight")
+        # Do this BEFORE saving history so we can store the translated values
+        translated_result = translate_diagnosis_result(prediction_result, language)
+        
+        
         # --- SAVE HISTORY ---
         diagnosis_id = None
         try:
@@ -304,6 +309,10 @@ def detect_disease():
                         'image_path': filepath,
                         'latitude': latitude,
                         'longitude': longitude,
+                        'language': language,
+                        'disease_local': translated_result.get('disease_local', ''),
+                        'crop_local': translated_result.get('crop_local', ''),
+                        'stage_local': translated_result.get('stage_local', ''),
                         'created_at': datetime.datetime.utcnow()
                     }
                 )
@@ -326,10 +335,6 @@ def detect_disease():
         except Exception as e:
             print(f"DEBUG: Error saving to history: {e}")
             diagnosis_id = None
-        
-        
-        # Translate the prediction labels (like "Healthy" or "Early Blight")
-        translated_result = translate_diagnosis_result(prediction_result, language)
         
         
         # Get UI text (buttons, labels)
@@ -396,43 +401,20 @@ def get_history():
         history = history[offset : offset + per_page]
         
         
-        language = 'en'
-        from bson.objectid import ObjectId
-        from bson.errors import InvalidId
-        try:
-            query = {'_id': ObjectId(user_id)}
-        except InvalidId:
-            query = {'id': user_id}
-
-        user = db.execute_query(collection='users', mongo_query=query)
-        if user:
-            language = user[0].get('preferred_language', 'en')
-
+        # Return history items in the language they were originally diagnosed in
+        # (no re-translation based on current user language)
         history_list = []
         for record in history:
             item = {
                 'id': str(record.get('_id') or record.get('id')),
-                'crop': record.get('crop'),
-                'disease': record.get('disease'),
+                'crop': record.get('crop_local') or record.get('crop'),
+                'disease': record.get('disease_local') or record.get('disease'),
                 'confidence': record.get('confidence'),
                 'severity_percent': record.get('severity_percent'),
-                'stage': record.get('stage'),
-                'created_at': record.get('created_at')
+                'stage': record.get('stage_local') or record.get('stage'),
+                'created_at': record.get('created_at'),
+                'language': record.get('language', 'en')
             }
-            
-            # Translate each record so it shows up in the user's language
-            if language != 'en':
-                try:
-                    translated = translate_diagnosis_result(item, language)
-                    
-                    if 'disease_local' in translated:
-                        item['disease'] = translated['disease_local']
-                    if 'crop_local' in translated:
-                        item['crop'] = translated['crop_local']
-                    if 'stage_local' in translated:
-                        item['stage'] = translated['stage_local']
-                except Exception as translate_err:
-                    print(f"DEBUG: Translation failed for history item: {translate_err}")
             
             history_list.append(item)
         
@@ -521,16 +503,9 @@ def get_diagnosis_details(diagnosis_id):
             'stage': diagnosis.get('stage')
         }
         
-        # Translate the prediction labels if needed based on the user language
-        language = 'en'
-        try:
-            user_query = {'_id': ObjectId(user_id)}
-        except InvalidId:
-            user_query = {'id': user_id}
-            
-        user = db.execute_query(collection='users', mongo_query=user_query)
-        if user:
-             language = user[0].get('preferred_language', 'en')
+        # Use the language that was used when the diagnosis was originally made
+        # (not the user's current preferred language)
+        language = diagnosis.get('language', 'en')
              
         translated_result = translate_diagnosis_result(prediction, language)
         
