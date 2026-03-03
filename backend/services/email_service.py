@@ -1,15 +1,13 @@
 """
-Email Service - Handles OTP generation, sending, and verification via SMTP.
-Uses Python's built-in smtplib (no extra dependencies needed).
+Email Service - Handles OTP generation, sending, and verification.
+Uses Resend (HTTPS API) instead of SMTP — required because Render blocks all SMTP ports.
+Sign up for free at https://resend.com — 3,000 emails/month free.
 """
 import random
-import smtplib
-import socket
+import resend
 import datetime
 import sys
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from database.db_connection import db
@@ -24,66 +22,41 @@ def generate_otp() -> str:
     return str(random.SystemRandom().randint(100000, 999999))
 
 
-def _log_smtp_config():
-    """Log current SMTP configuration (masks password) for debugging."""
-    print(f"[EmailService] SMTP Config:")
-    print(f"  HOST : {settings.SMTP_HOST}")
-    print(f"  USER : {settings.SMTP_USER}")
-    print(f"  FROM : {settings.SMTP_FROM}")
-    print(f"  PASS : {'[SET - ' + str(len(settings.SMTP_PASS)) + ' chars]' if settings.SMTP_PASS else '[NOT SET]'}")
+def _get_resend_client():
+    """Configure and return the Resend API key."""
+    api_key = settings.RESEND_API_KEY
+    if not api_key:
+        raise ValueError("[EmailService] ❌ RESEND_API_KEY is not set. Get a free key at https://resend.com")
+    resend.api_key = api_key
 
 
 def test_smtp_connectivity():
     """
-    Diagnostic function — tests SMTP connectivity and logs results.
-    Call this from a health-check endpoint to verify email config on Render.
+    Diagnostic — tests email configuration.
     Returns a dict with results.
     """
-    _log_smtp_config()
-    results = {}
-
-    for label, use_ssl, port in [("SSL/465", True, 465), ("STARTTLS/587", False, 587)]:
-        print(f"[EmailService] Testing {label}...")
-        try:
-            if use_ssl:
-                with smtplib.SMTP_SSL(settings.SMTP_HOST, port, timeout=20) as server:
-                    server.ehlo()
-                    server.login(settings.SMTP_USER, settings.SMTP_PASS)
-                    results[label] = "✅ Login successful"
-            else:
-                with smtplib.SMTP(settings.SMTP_HOST, port, timeout=20) as server:
-                    server.ehlo()
-                    server.starttls()
-                    server.ehlo()
-                    server.login(settings.SMTP_USER, settings.SMTP_PASS)
-                    results[label] = "✅ Login successful"
-            print(f"[EmailService] {label}: ✅ Login successful")
-        except smtplib.SMTPAuthenticationError as e:
-            results[label] = f"❌ Auth failed: {e}"
-            print(f"[EmailService] {label}: ❌ Auth failed: {e}")
-        except socket.timeout:
-            results[label] = "❌ Connection timed out"
-            print(f"[EmailService] {label}: ❌ Connection timed out")
-        except OSError as e:
-            results[label] = f"❌ Network error (port likely blocked): {e}"
-            print(f"[EmailService] {label}: ❌ Network error: {e}")
-        except Exception as e:
-            results[label] = f"❌ {type(e).__name__}: {e}"
-            print(f"[EmailService] {label}: ❌ {type(e).__name__}: {e}")
-
-    return results
+    print(f"[EmailService] SMTP is not used — Render blocks SMTP ports.")
+    print(f"[EmailService] Using Resend API instead.")
+    print(f"[EmailService] RESEND_API_KEY set: {bool(settings.RESEND_API_KEY)}")
+    print(f"[EmailService] SMTP_FROM (sender): {settings.SMTP_FROM}")
+    return {
+        "mode": "Resend HTTP API (not SMTP)",
+        "RESEND_API_KEY_set": bool(settings.RESEND_API_KEY),
+        "sender": settings.SMTP_FROM,
+        "note": "Render blocks SMTP ports 465 and 587. Resend uses HTTPS (port 443)."
+    }
 
 
 def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
     """
-    Send an OTP email to the farmer.
+    Send an OTP email via Resend API.
     purpose: 'verify' for email verification, 'reset' for password reset.
     Returns True on success, False on failure.
     """
-    _log_smtp_config()
-
-    if not settings.SMTP_USER or not settings.SMTP_PASS:
-        print("[EmailService] ❌ SMTP_USER or SMTP_PASS is not configured. Cannot send email.")
+    try:
+        _get_resend_client()
+    except ValueError as e:
+        print(str(e))
         return False
 
     if purpose == 'reset':
@@ -134,62 +107,19 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         """
 
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = settings.SMTP_FROM
-        msg['To'] = to_email
-
-        # Plain text fallback
-        plain_text = f"Your Agri-AI OTP is: {otp}\nValid for {OTP_EXPIRY_MINUTES} minutes."
-        msg.attach(MIMEText(plain_text, 'plain'))
-        msg.attach(MIMEText(body_html, 'html'))
-
-        # Try port 465 (SSL) first — most reliable on Render
-        # Fall back to port 587 (STARTTLS)
-        sent = False
-        last_error = None
-
-        for attempt, (use_ssl, port) in enumerate([(True, 465), (False, 587)], 1):
-            try:
-                print(f"[EmailService] Attempt {attempt}: Trying port {port} ({'SSL' if use_ssl else 'STARTTLS'}) → {to_email}")
-                if use_ssl:
-                    with smtplib.SMTP_SSL(settings.SMTP_HOST, port, timeout=30) as server:
-                        server.ehlo()
-                        server.login(settings.SMTP_USER, settings.SMTP_PASS)
-                        server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
-                else:
-                    with smtplib.SMTP(settings.SMTP_HOST, port, timeout=30) as server:
-                        server.ehlo()
-                        server.starttls()
-                        server.ehlo()
-                        server.login(settings.SMTP_USER, settings.SMTP_PASS)
-                        server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
-                sent = True
-                print(f"[EmailService] ✅ OTP sent to {to_email} via port {port} (purpose: {purpose})")
-                break
-            except smtplib.SMTPAuthenticationError as e:
-                # Auth errors won't be fixed by retrying a different port — stop immediately
-                print(f"[EmailService] ❌ SMTP Authentication failed on port {port}: {e}")
-                print("[EmailService] 💡 Check that your Gmail App Password is correct and 2FA is enabled.")
-                return False
-            except socket.timeout:
-                last_error = socket.timeout(f"Connection timed out on port {port}")
-                print(f"[EmailService] ⚠️ Port {port} timed out — trying next port...")
-            except OSError as e:
-                last_error = e
-                print(f"[EmailService] ⚠️ Port {port} OS error (may be blocked): {type(e).__name__}: {e}")
-            except Exception as e:
-                last_error = e
-                print(f"[EmailService] ⚠️ Port {port} failed: {type(e).__name__}: {e}")
-
-        if not sent:
-            print(f"[EmailService] ❌ All SMTP attempts failed. Last error: {last_error}")
-            return False
-
+        params: resend.Emails.SendParams = {
+            "from": f"Agri-AI <{settings.SMTP_FROM}>",
+            "to": [to_email],
+            "subject": subject,
+            "html": body_html,
+        }
+        response = resend.Emails.send(params)
+        email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
+        print(f"[EmailService] ✅ OTP email sent to {to_email} via Resend (purpose: {purpose}, id: {email_id})")
         return True
 
     except Exception as e:
-        print(f"[EmailService] ❌ Unexpected error sending email: {type(e).__name__}: {e}")
+        print(f"[EmailService] ❌ Resend error: {type(e).__name__}: {e}")
         return False
 
 
@@ -198,20 +128,18 @@ def store_otp(email: str, otp: str, purpose: str) -> None:
     Store OTP in MongoDB `otp_tokens` collection.
     Overwrites any previous OTP for the same email + purpose combination.
     """
-    # Delete old OTPs for this email + purpose first
     try:
         db.db['otp_tokens'].delete_many({'email': email, 'purpose': purpose})
     except Exception:
         pass
 
-    # Insert the new OTP
     expiry = datetime.datetime.utcnow() + datetime.timedelta(minutes=OTP_EXPIRY_MINUTES)
     db.execute_insert(
         collection='otp_tokens',
         document={
             'email': email.lower().strip(),
             'otp': otp,
-            'purpose': purpose,  # 'verify' or 'reset'
+            'purpose': purpose,
             'expires_at': expiry,
             'used': False,
             'created_at': datetime.datetime.utcnow()
@@ -236,18 +164,14 @@ def verify_otp(email: str, otp: str, purpose: str) -> dict:
     if not results:
         return {'valid': False, 'error': 'No OTP found. Please request a new one.'}
 
-    # Get the most recent matching OTP
     token = sorted(results, key=lambda x: x.get('created_at', datetime.datetime.min), reverse=True)[0]
 
-    # Check expiry
     if datetime.datetime.utcnow() > token.get('expires_at', datetime.datetime.min):
         return {'valid': False, 'error': 'OTP has expired. Please request a new one.'}
 
-    # Check the actual OTP value
     if token.get('otp') != otp.strip():
         return {'valid': False, 'error': 'Invalid OTP. Please try again.'}
 
-    # Mark as used so it can't be reused
     try:
         db.db['otp_tokens'].update_one(
             {'_id': token['_id']},
