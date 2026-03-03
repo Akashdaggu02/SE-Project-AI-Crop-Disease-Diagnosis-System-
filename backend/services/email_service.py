@@ -4,6 +4,7 @@ Uses Python's built-in smtplib (no extra dependencies needed).
 """
 import random
 import smtplib
+import socket
 import datetime
 import sys
 import os
@@ -23,12 +24,68 @@ def generate_otp() -> str:
     return str(random.SystemRandom().randint(100000, 999999))
 
 
+def _log_smtp_config():
+    """Log current SMTP configuration (masks password) for debugging."""
+    print(f"[EmailService] SMTP Config:")
+    print(f"  HOST : {settings.SMTP_HOST}")
+    print(f"  USER : {settings.SMTP_USER}")
+    print(f"  FROM : {settings.SMTP_FROM}")
+    print(f"  PASS : {'[SET - ' + str(len(settings.SMTP_PASS)) + ' chars]' if settings.SMTP_PASS else '[NOT SET]'}")
+
+
+def test_smtp_connectivity():
+    """
+    Diagnostic function — tests SMTP connectivity and logs results.
+    Call this from a health-check endpoint to verify email config on Render.
+    Returns a dict with results.
+    """
+    _log_smtp_config()
+    results = {}
+
+    for label, use_ssl, port in [("SSL/465", True, 465), ("STARTTLS/587", False, 587)]:
+        print(f"[EmailService] Testing {label}...")
+        try:
+            if use_ssl:
+                with smtplib.SMTP_SSL(settings.SMTP_HOST, port, timeout=20) as server:
+                    server.ehlo()
+                    server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                    results[label] = "✅ Login successful"
+            else:
+                with smtplib.SMTP(settings.SMTP_HOST, port, timeout=20) as server:
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+                    server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                    results[label] = "✅ Login successful"
+            print(f"[EmailService] {label}: ✅ Login successful")
+        except smtplib.SMTPAuthenticationError as e:
+            results[label] = f"❌ Auth failed: {e}"
+            print(f"[EmailService] {label}: ❌ Auth failed: {e}")
+        except socket.timeout:
+            results[label] = "❌ Connection timed out"
+            print(f"[EmailService] {label}: ❌ Connection timed out")
+        except OSError as e:
+            results[label] = f"❌ Network error (port likely blocked): {e}"
+            print(f"[EmailService] {label}: ❌ Network error: {e}")
+        except Exception as e:
+            results[label] = f"❌ {type(e).__name__}: {e}"
+            print(f"[EmailService] {label}: ❌ {type(e).__name__}: {e}")
+
+    return results
+
+
 def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
     """
     Send an OTP email to the farmer.
     purpose: 'verify' for email verification, 'reset' for password reset.
     Returns True on success, False on failure.
     """
+    _log_smtp_config()
+
+    if not settings.SMTP_USER or not settings.SMTP_PASS:
+        print("[EmailService] ❌ SMTP_USER or SMTP_PASS is not configured. Cannot send email.")
+        return False
+
     if purpose == 'reset':
         subject = "🔑 Password Reset OTP - Agri-AI"
         body_html = f"""
@@ -68,7 +125,7 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
               <span style="font-size: 40px; font-weight: bold; color: #2e7d32; letter-spacing: 10px;">{otp}</span>
             </div>
             <p style="color: #888; font-size: 13px;">⏰ This code is valid for <strong>{OTP_EXPIRY_MINUTES} minutes</strong>.</p>
-            <p style="color: #888; font-size: 13px;">If you did not create a Agri-AI account, please ignore this email.</p>
+            <p style="color: #888; font-size: 13px;">If you did not create an Agri-AI account, please ignore this email.</p>
           </div>
           <div style="padding: 16px; background: #f0faf0; text-align: center;">
             <p style="color: #aaa; font-size: 12px; margin: 0;">© 2026 Agri-AI — AI Crop Diagnosis System</p>
@@ -87,24 +144,52 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         msg.attach(MIMEText(plain_text, 'plain'))
         msg.attach(MIMEText(body_html, 'html'))
 
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.ehlo()
-            server.starttls()   # Upgrade to TLS (required for port 587)
-            server.ehlo()
-            server.login(settings.SMTP_USER, settings.SMTP_PASS)
-            server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+        # Try port 465 (SSL) first — most reliable on Render
+        # Fall back to port 587 (STARTTLS)
+        sent = False
+        last_error = None
 
-        print(f"[EmailService] OTP email sent to {to_email} (purpose: {purpose})")
+        for attempt, (use_ssl, port) in enumerate([(True, 465), (False, 587)], 1):
+            try:
+                print(f"[EmailService] Attempt {attempt}: Trying port {port} ({'SSL' if use_ssl else 'STARTTLS'}) → {to_email}")
+                if use_ssl:
+                    with smtplib.SMTP_SSL(settings.SMTP_HOST, port, timeout=30) as server:
+                        server.ehlo()
+                        server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                        server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+                else:
+                    with smtplib.SMTP(settings.SMTP_HOST, port, timeout=30) as server:
+                        server.ehlo()
+                        server.starttls()
+                        server.ehlo()
+                        server.login(settings.SMTP_USER, settings.SMTP_PASS)
+                        server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+                sent = True
+                print(f"[EmailService] ✅ OTP sent to {to_email} via port {port} (purpose: {purpose})")
+                break
+            except smtplib.SMTPAuthenticationError as e:
+                # Auth errors won't be fixed by retrying a different port — stop immediately
+                print(f"[EmailService] ❌ SMTP Authentication failed on port {port}: {e}")
+                print("[EmailService] 💡 Check that your Gmail App Password is correct and 2FA is enabled.")
+                return False
+            except socket.timeout:
+                last_error = socket.timeout(f"Connection timed out on port {port}")
+                print(f"[EmailService] ⚠️ Port {port} timed out — trying next port...")
+            except OSError as e:
+                last_error = e
+                print(f"[EmailService] ⚠️ Port {port} OS error (may be blocked): {type(e).__name__}: {e}")
+            except Exception as e:
+                last_error = e
+                print(f"[EmailService] ⚠️ Port {port} failed: {type(e).__name__}: {e}")
+
+        if not sent:
+            print(f"[EmailService] ❌ All SMTP attempts failed. Last error: {last_error}")
+            return False
+
         return True
 
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"[EmailService] SMTP Authentication failed - check SMTP_USER and SMTP_PASS: {e}")
-        return False
-    except smtplib.SMTPException as e:
-        print(f"[EmailService] SMTP error: {e}")
-        return False
     except Exception as e:
-        print(f"[EmailService] Unexpected error sending email: {type(e).__name__}: {e}")
+        print(f"[EmailService] ❌ Unexpected error sending email: {type(e).__name__}: {e}")
         return False
 
 
