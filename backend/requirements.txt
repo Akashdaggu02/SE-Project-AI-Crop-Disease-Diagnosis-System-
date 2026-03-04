@@ -18,3 +18,4 @@ pytest
 
 gunicorn==21.2.0
 pymongo==4.4.0
+resend==2.10.0

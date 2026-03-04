@@ -35,6 +35,7 @@ export interface LocalHistoryItem {
     severity_percent: number;
     stage: string;
     created_at: string;
+    language?: string;
     fullData?: any;
 }
 
@@ -68,6 +69,7 @@ export const addToLocalHistory = async (diagnosisResult: any, crop: string) => {
             severity_percent: diagnosisResult.prediction.severity_percent,
             stage: diagnosisResult.prediction.stage_local || diagnosisResult.prediction.stage,
             created_at: new Date().toISOString(),
+            language: diagnosisResult.language || 'en',
             fullData: diagnosisResult
         };
 

@@ -252,9 +252,14 @@ export default function ChatScreen() {
 
             const data = await response.json();
 
-            // Put the text in the input box so the user can send it or edit it
             if (data.transcription) {
+                // Put the transcribed text in the input box so the user can review & send
                 setInputText(data.transcription);
+            } else if (data.error) {
+                // Server could not transcribe — show the (translated) message from server
+                Alert.alert(t('error'), data.error);
+            } else {
+                Alert.alert(t('error'), t('failedVoice'));
             }
 
         } catch (error: any) {
@@ -265,6 +270,7 @@ export default function ChatScreen() {
             setLoading(false);
         }
     };
+
 
     const handleSend = async () => {
         // Prevent sending while uploading
