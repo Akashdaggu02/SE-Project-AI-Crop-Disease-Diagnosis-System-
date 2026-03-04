@@ -27,19 +27,8 @@ export default function ForgotPasswordScreen() {
         setLoading(true);
         try {
             await api.post('user/forgot-password', { email: trimmed });
-            Alert.alert(
-                '📧 OTP Sent!',
-                `A password reset code has been sent to ${trimmed}. Check your inbox.`,
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            router.push({ pathname: '/reset-password', params: { email: trimmed } });
-                        }
-                    }
-                ],
-                { cancelable: false }
-            );
+            // Navigate immediately to the reset password page with a success flag
+            router.push({ pathname: '/reset-password', params: { email: trimmed, otpSent: 'true' } });
         } catch (error: any) {
             const message = error.response?.data?.error || 'Something went wrong. Please try again.';
             Alert.alert('Error', message);
