@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator
@@ -8,7 +8,7 @@ import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
 import api from '../services/api';
 
 export default function ResetPasswordScreen() {
-    const { email } = useLocalSearchParams<{ email: string }>();
+    const { email, otpSent } = useLocalSearchParams<{ email: string; otpSent?: string }>();
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,6 +18,12 @@ export default function ResetPasswordScreen() {
     const [inlineSuccess, setInlineSuccess] = useState('');
     const inputs = useRef<Array<TextInput | null>>([]);
     const router = useRouter();
+
+    useEffect(() => {
+        if (otpSent === 'true') {
+            setInlineSuccess(`📧 A password reset code has been sent to ${email}. Check your inbox.`);
+        }
+    }, [otpSent, email]);
 
     const handleOtpChange = (value: string, index: number) => {
         if (!/^\d*$/.test(value)) return;
