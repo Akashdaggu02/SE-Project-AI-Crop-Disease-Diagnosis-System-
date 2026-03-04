@@ -1,10 +1,10 @@
 """
 Email Service - Handles OTP generation, sending, and verification.
-Uses Resend (HTTPS API) instead of SMTP — required because Render blocks all SMTP ports.
-Sign up for free at https://resend.com — 3,000 emails/month free.
+Uses EmailJS (HTTPS REST API) — works on Render since no SMTP ports are needed.
+Sends through your connected Gmail account via EmailJS.
 """
 import random
-import resend
+import requests
 import datetime
 import sys
 import os
@@ -16,18 +16,12 @@ from config.settings import settings
 
 OTP_EXPIRY_MINUTES = 10
 
+EMAILJS_API_URL = "https://api.emailjs.com/api/v1.0/email/send"
+
 
 def generate_otp() -> str:
     """Generate a cryptographically safe 6-digit OTP."""
     return str(random.SystemRandom().randint(100000, 999999))
-
-
-def _get_resend_client():
-    """Configure and return the Resend API key."""
-    api_key = settings.RESEND_API_KEY
-    if not api_key:
-        raise ValueError("[EmailService] ❌ RESEND_API_KEY is not set. Get a free key at https://resend.com")
-    resend.api_key = api_key
 
 
 def test_smtp_connectivity():
@@ -35,97 +29,68 @@ def test_smtp_connectivity():
     Diagnostic — tests email configuration.
     Returns a dict with results.
     """
-    print(f"[EmailService] SMTP is not used — Render blocks SMTP ports.")
-    print(f"[EmailService] Using Resend API instead.")
-    print(f"[EmailService] RESEND_API_KEY set: {bool(settings.RESEND_API_KEY)}")
-    print(f"[EmailService] SMTP_FROM (sender): {settings.SMTP_FROM}")
+    print(f"[EmailService] Using EmailJS REST API (not SMTP).")
+    print(f"[EmailService] EMAILJS_SERVICE_ID set: {bool(settings.EMAILJS_SERVICE_ID)}")
+    print(f"[EmailService] EMAILJS_TEMPLATE_ID set: {bool(settings.EMAILJS_TEMPLATE_ID)}")
+    print(f"[EmailService] EMAILJS_PUBLIC_KEY set: {bool(settings.EMAILJS_PUBLIC_KEY)}")
     return {
-        "mode": "Resend HTTP API (not SMTP)",
-        "RESEND_API_KEY_set": bool(settings.RESEND_API_KEY),
-        "sender": settings.SMTP_FROM,
-        "note": "Render blocks SMTP ports 465 and 587. Resend uses HTTPS (port 443)."
+        "mode": "EmailJS HTTPS API (not SMTP)",
+        "service_id": settings.EMAILJS_SERVICE_ID,
+        "template_id": settings.EMAILJS_TEMPLATE_ID,
+        "public_key_set": bool(settings.EMAILJS_PUBLIC_KEY),
+        "note": "Render blocks SMTP ports. EmailJS uses HTTPS (port 443) and sends through Gmail."
     }
 
 
 def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
     """
-    Send an OTP email via Resend API.
+    Send an OTP email via EmailJS REST API.
     purpose: 'verify' for email verification, 'reset' for password reset.
     Returns True on success, False on failure.
     """
-    try:
-        _get_resend_client()
-    except ValueError as e:
-        print(str(e))
+    service_id = settings.EMAILJS_SERVICE_ID
+    template_id = settings.EMAILJS_TEMPLATE_ID
+    public_key = settings.EMAILJS_PUBLIC_KEY
+
+    if not service_id or not template_id or not public_key:
+        print("[EmailService] ❌ EmailJS credentials not configured. Set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY.")
         return False
 
-    if purpose == 'reset':
-        subject = "🔑 Password Reset OTP - Agri-AI"
-        body_html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; background: #f9f9f9; border-radius: 12px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #2e7d32, #4caf50); padding: 32px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 26px;">🌾 Agri-AI</h1>
-            <p style="color: #c8e6c9; margin: 8px 0 0 0;">AI Crop Diagnosis System</p>
-          </div>
-          <div style="padding: 32px; background: white;">
-            <h2 style="color: #2e7d32; margin-top: 0;">Password Reset Request</h2>
-            <p style="color: #555; line-height: 1.6;">We received a request to reset your password. Use the OTP below to create a new password.</p>
-            <div style="background: #e8f5e9; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
-              <p style="color: #555; margin: 0 0 8px 0; font-size: 14px;">Your One-Time Password</p>
-              <span style="font-size: 40px; font-weight: bold; color: #2e7d32; letter-spacing: 10px;">{otp}</span>
-            </div>
-            <p style="color: #888; font-size: 13px;">⏰ This OTP is valid for <strong>{OTP_EXPIRY_MINUTES} minutes</strong>.</p>
-            <p style="color: #888; font-size: 13px;">If you did not request this, please ignore this email. Your password will remain unchanged.</p>
-          </div>
-          <div style="padding: 16px; background: #f0faf0; text-align: center;">
-            <p style="color: #aaa; font-size: 12px; margin: 0;">© 2026 Agri-AI — AI Crop Diagnosis System</p>
-          </div>
-        </div>
-        """
-    else:
-        subject = "✅ Email Verification OTP - Agri-AI"
-        body_html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; background: #f9f9f9; border-radius: 12px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #2e7d32, #4caf50); padding: 32px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 26px;">🌾 Agri-AI</h1>
-            <p style="color: #c8e6c9; margin: 8px 0 0 0;">AI Crop Diagnosis System</p>
-          </div>
-          <div style="padding: 32px; background: white;">
-            <h2 style="color: #2e7d32; margin-top: 0;">Verify Your Email</h2>
-            <p style="color: #555; line-height: 1.6;">Welcome to Agri-AI! Please verify your email address to activate your account.</p>
-            <div style="background: #e8f5e9; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
-              <p style="color: #555; margin: 0 0 8px 0; font-size: 14px;">Your Verification Code</p>
-              <span style="font-size: 40px; font-weight: bold; color: #2e7d32; letter-spacing: 10px;">{otp}</span>
-            </div>
-            <p style="color: #888; font-size: 13px;">⏰ This code is valid for <strong>{OTP_EXPIRY_MINUTES} minutes</strong>.</p>
-            <p style="color: #888; font-size: 13px;">If you did not create an Agri-AI account, please ignore this email.</p>
-          </div>
-          <div style="padding: 16px; background: #f0faf0; text-align: center;">
-            <p style="color: #aaa; font-size: 12px; margin: 0;">© 2026 Agri-AI — AI Crop Diagnosis System</p>
-          </div>
-        </div>
-        """
+    # Build the template parameters that match the EmailJS template variables
+    # Template uses: {{email}}, {{passcode}}, {{time}}
+    template_params = {
+        "email": to_email,
+        "passcode": otp,
+        "time": f"{OTP_EXPIRY_MINUTES} minutes",
+    }
+
+    payload = {
+        "service_id": service_id,
+        "template_id": template_id,
+        "user_id": public_key,
+        "template_params": template_params,
+    }
 
     try:
-        params: resend.Emails.SendParams = {
-            "from": f"Agri-AI <{settings.SMTP_FROM}>",
-            "to": [to_email],
-            "subject": subject,
-            "html": body_html,
-        }
-        response = resend.Emails.send(params)
-        email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
-        print(f"[EmailService] ✅ OTP email sent to {to_email} via Resend (purpose: {purpose}, id: {email_id})")
-        return True
+        response = requests.post(
+            EMAILJS_API_URL,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=15
+        )
 
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"[EmailService] SMTP Authentication failed - check SMTP_USER and SMTP_PASS: {e}")
-        return False
-    except smtplib.SMTPException as e:
-        print(f"[EmailService] SMTP error: {e}")
+        if response.status_code == 200:
+            print(f"[EmailService] ✅ OTP email sent to {to_email} via EmailJS (purpose: {purpose})")
+            return True
+        else:
+            print(f"[EmailService] ❌ EmailJS returned {response.status_code}: {response.text}")
+            return False
+
+    except requests.exceptions.Timeout:
+        print(f"[EmailService] ❌ EmailJS request timed out")
         return False
     except Exception as e:
-        print(f"[EmailService] ❌ Resend error: {type(e).__name__}: {e}")
+        print(f"[EmailService] ❌ EmailJS error: {type(e).__name__}: {e}")
         return False
 
 
