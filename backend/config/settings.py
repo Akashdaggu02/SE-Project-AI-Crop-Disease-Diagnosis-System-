@@ -81,17 +81,12 @@ class Settings:
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
     JWT_EXPIRATION_HOURS = 24 * 7  # Keep users logged in for a week
 
-    # Email settings for OTP delivery
-    # NOTE: Render blocks SMTP — we use Resend API (HTTPS) instead.
-    # SMTP_FROM is kept as the verified sender address used with Resend.
-    # On Resend free tier you must verify your domain OR use onboarding@resend.dev for testing.
-    RESEND_API_KEY = os.getenv('RESEND_API_KEY', 're_PY2xfBtW_EyWG5Y2Q34Kc8Jo3sBbwTRgZ')           # Get free key at https://resend.com
-    SMTP_FROM = os.getenv('SMTP_FROM', 'onboarding@resend.dev')  # Use verified sender domain
-    # Legacy SMTP fields kept for reference (not used on Render)
-    SMTP_HOST = os.getenv('SMTP_HOST', 'smtp.gmail.com')
-    SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
-    SMTP_USER = os.getenv('SMTP_USER', '')
-    SMTP_PASS = os.getenv('SMTP_PASS', '')
+    # Email settings for OTP delivery via EmailJS (HTTPS REST API)
+    # Works on Render (no SMTP needed), sends through your Gmail account
+    EMAILJS_SERVICE_ID = os.getenv('EMAILJS_SERVICE_ID', 'service_qpfufzh')
+    EMAILJS_TEMPLATE_ID = os.getenv('EMAILJS_TEMPLATE_ID', 'template_2yxtjsp')
+    EMAILJS_PUBLIC_KEY = os.getenv('EMAILJS_PUBLIC_KEY', '3SwXJU-t4QdJQNZDR')
+    SMTP_FROM = os.getenv('SMTP_FROM', 'mohansai1810@gmail.com')
     
     # Quality control
     MIN_IMAGE_QUALITY_SCORE = 0.3 # Reject blurry images
