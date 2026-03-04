@@ -15,27 +15,34 @@ interface ProgressionIndicatorProps {
 /**
  * Shows how far the disease has spread using a progress bar.
  * Also changes color like a traffic light: Green (Early) -> Yellow (Moderate) -> Red (Severe).
+ *
+ * IMPORTANT: Always use `labels` (diagnosis-time translations from ui_translations) first.
+ * Fall back to `t()` only when labels are not provided (e.g., standalone usage).
+ * This prevents language mixing when the user changes language after a diagnosis was made.
  */
 const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, stage, labels }) => {
     const { t } = useLanguage();
     const { isDarkMode, colorScheme } = useAppTheme();
     const themeParams = Colors[colorScheme];
 
+    // Helper: prefer diagnosis-time label, fall back to current-language t()
+    const lt = (key: string) => (labels as any)?.[key] || t(key as any);
+
     const getSeverityLevel = () => {
         if (severity < 30) return {
-            level: labels?.stage_early || t('stage_early'),
+            level: lt('stage_early'),
             color: isDarkMode ? '#81c784' : '#4caf50',
             icon: AlertCircle,
             bg: isDarkMode ? '#1e3b20' : '#e8f5e9'
         };
         if (severity < 60) return {
-            level: labels?.stage_moderate || t('stage_moderate'),
+            level: lt('stage_moderate'),
             color: isDarkMode ? '#ffb74d' : '#ff9800',
             icon: AlertTriangle,
             bg: isDarkMode ? '#3e2723' : '#fff3e0'
         };
         return {
-            level: labels?.stage_severe || t('stage_severe'),
+            level: lt('stage_severe'),
             color: isDarkMode ? '#ff8a80' : '#d32f2f',
             icon: AlertOctagon,
             bg: isDarkMode ? '#4a1515' : '#ffebee'
@@ -50,7 +57,7 @@ const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, s
             <View style={styles.header}>
                 <Icon size={24} color={severityInfo.color} />
                 <View style={styles.headerText}>
-                    <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#333' }]}>{labels?.diseaseProgression || t('diseaseProgression')}</Text>
+                    <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#333' }]}>{lt('diseaseProgression')}</Text>
                     <Text style={[styles.level, { color: severityInfo.color }]}>
                         {severityInfo.level}
                     </Text>
@@ -76,15 +83,15 @@ const ProgressionIndicator: React.FC<ProgressionIndicatorProps> = ({ severity, s
             {/* Helpful message based on severity */}
             <View style={[styles.infoCard, { backgroundColor: severityInfo.bg }]}>
                 <Text style={[styles.infoText, { color: severityInfo.color }]}>
-                    {severity < 30 && (labels?.earlyDetectionMsg || t('earlyDetectionMsg'))}
-                    {severity >= 30 && severity < 60 && (labels?.moderateInfectionMsg || t('moderateInfectionMsg'))}
-                    {severity >= 60 && (labels?.severeInfectionMsg || t('severeInfectionMsg'))}
+                    {severity < 30 && lt('earlyDetectionMsg')}
+                    {severity >= 30 && severity < 60 && lt('moderateInfectionMsg')}
+                    {severity >= 60 && lt('severeInfectionMsg')}
                 </Text>
             </View>
 
             {stage && (
                 <View style={[styles.stageInfo, { borderTopColor: isDarkMode ? '#444' : '#f0f0f0' }]}>
-                    <Text style={[styles.stageLabel, { color: isDarkMode ? '#aaa' : '#666' }]}>{labels?.currentStage || t('currentStage')}</Text>
+                    <Text style={[styles.stageLabel, { color: isDarkMode ? '#aaa' : '#666' }]}>{lt('currentStage')}</Text>
                     <Text style={[styles.stageValue, { color: isDarkMode ? '#fff' : '#333' }]}>{stage}</Text>
                 </View>
             )}

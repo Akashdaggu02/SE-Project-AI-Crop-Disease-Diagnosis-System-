@@ -1,8 +1,8 @@
 flask==3.0.0
 flask-cors==4.0.0
 tensorflow-cpu
-opencv-python==4.8.1.78
-numpy>=1.24.3
+opencv-python-headless==4.8.1.78
+numpy>=1.24.3,<2.0.0
 Pillow==10.1.0
 bcrypt==4.1.2
 PyJWT==2.8.0
@@ -18,3 +18,4 @@ pytest
 
 gunicorn==21.2.0
 pymongo==4.4.0
+resend==2.10.0

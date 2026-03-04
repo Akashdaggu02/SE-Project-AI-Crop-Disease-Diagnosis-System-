@@ -239,6 +239,8 @@ UI_LABELS_ENGLISH = {
     "diagnosis_id": "Diagnosis ID",
     "healthy_crop": "Healthy Crop Detected",
     "potential_disease": "Potential Disease Detected",
+    "healthy": "Healthy",
+    "healthyStage": "Healthy Stage",
     "voice_explanation": "Voice Explanation",
     "pause_explanation": "Pause Explanation",
     "share_report": "Download Report",
@@ -261,9 +263,16 @@ UI_LABELS_ENGLISH = {
     "prevention_best_practices": "Prevention & Best Practices",
     "organic_alternatives": "Organic Alternatives",
     "finish_diagnosis": "Finish Diagnosis",
+    # ProgressionIndicator keys
+    "diseaseProgression": "Disease Progression",
     "stage_early": "Early Stage",
     "stage_moderate": "Moderate Stage",
     "stage_severe": "Severe Stage",
+    "earlyDetectionMsg": "Early detection! Treatment is most effective at this stage.",
+    "moderateInfectionMsg": "Moderate infection. Prompt treatment needed to prevent spreading.",
+    "severeInfectionMsg": "Severe infection. Immediate action required to save the crop!",
+    "currentStage": "Current Stage",
+    # History/misc
     "diagnosis_history_title": "Diagnosis History",
     "no_diagnoses_found": "No diagnoses yet",
     "history_empty_message": "Your past crop diagnoses will appear here.",
@@ -273,22 +282,19 @@ UI_LABELS_ENGLISH = {
 def get_translated_ui_labels(target_language: str) -> Dict[str, str]:
     """
     Get all the buttons and labels for the app in the user's language.
+    Uses batch translation to minimize API round-trips.
     """
     if target_language == 'en':
         return UI_LABELS_ENGLISH
-        
-    translated_labels = {}
-    for key, text in UI_LABELS_ENGLISH.items():
-        
-        # Translate each label one by one
-        translated = translate_text(text, target_language)
-        
-        
-        # Only send it back if it's actually different (saves data)
-        if translated != text:
-             translated_labels[key] = translated
-        
-    return translated_labels
+
+    # Use batch translation: 1 HTTP call instead of 30+
+    try:
+        batch_results = translate_batch(UI_LABELS_ENGLISH, target_language)
+        # Only return labels that are actually different from English
+        return {k: v for k, v in batch_results.items() if v and v != UI_LABELS_ENGLISH.get(k)}
+    except Exception as e:
+        print(f"DEBUG: Batch UI label translation failed: {e}, falling back to English")
+        return UI_LABELS_ENGLISH
 
 def get_supported_languages() -> Dict[str, str]:
     """List of languages our app can speak"""

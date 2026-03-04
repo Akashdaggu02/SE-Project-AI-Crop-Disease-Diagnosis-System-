@@ -71,6 +71,23 @@ def health_check():
     }), 200
 
 
+# Diagnostic endpoint — tests SMTP connectivity and login on Render
+# Visit /email-test in your browser to see detailed results
+@app.route('/email-test', methods=['GET'])
+def email_test():
+    from services.email_service import test_smtp_connectivity
+    from config.settings import settings
+    results = test_smtp_connectivity()
+    return jsonify({
+        'smtp_host': settings.SMTP_HOST,
+        'smtp_user': settings.SMTP_USER,
+        'smtp_from': settings.SMTP_FROM,
+        'smtp_pass_set': bool(settings.SMTP_PASS),
+        'smtp_pass_length': len(settings.SMTP_PASS) if settings.SMTP_PASS else 0,
+        'connectivity': results
+    }), 200
+
+
 # Provide information about available API endpoints
 @app.route('/api', methods=['GET'])
 def api_info():
