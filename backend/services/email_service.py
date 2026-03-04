@@ -118,6 +118,12 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         print(f"[EmailService] ✅ OTP email sent to {to_email} via Resend (purpose: {purpose}, id: {email_id})")
         return True
 
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[EmailService] SMTP Authentication failed - check SMTP_USER and SMTP_PASS: {e}")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"[EmailService] SMTP error: {e}")
+        return False
     except Exception as e:
         print(f"[EmailService] ❌ Resend error: {type(e).__name__}: {e}")
         return False

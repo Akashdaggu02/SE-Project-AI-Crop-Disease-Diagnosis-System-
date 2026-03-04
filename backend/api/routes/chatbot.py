@@ -838,3 +838,131 @@ def get_chat_history():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@chatbot_bp.route('/voice', methods=['POST'])
+def transcribe_voice():
+    """
+    Speech-to-text endpoint for the chatbot microphone button.
+    Accepts an audio file, transcribes it using Gemini AI, and returns
+    the transcription text so the frontend can put it in the chat input.
+    """
+    import datetime
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'No selected audio file'}), 400
+
+        # Get target language from the form (sent by the app)
+        language = request.form.get('language', 'en')
+
+        # Save the audio file temporarily
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(audio_file.filename or 'voice.mp4')
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"voice_{timestamp}_{filename}"
+        os.makedirs(settings.UPLOAD_FOLDER, exist_ok=True)
+        filepath = os.path.join(settings.UPLOAD_FOLDER, filename)
+        audio_file.save(filepath)
+
+        log_debug(f"Voice file saved: {filepath}, language: {language}")
+
+        transcription = None
+
+        # --- Strategy 1: Use Gemini to transcribe the audio ---
+        if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY and gemma_model:
+            try:
+                lang_name = LANGUAGE_NAMES.get(language, 'English')
+                # Read the audio bytes and send them to Gemini
+                with open(filepath, 'rb') as f:
+                    audio_bytes = f.read()
+
+                # Determine mime type from file extension
+                ext = filename.rsplit('.', 1)[-1].lower()
+                mime_map = {
+                    'mp4': 'audio/mp4',
+                    'm4a': 'audio/mp4',
+                    'mp3': 'audio/mpeg',
+                    'wav': 'audio/wav',
+                    'ogg': 'audio/ogg',
+                    'webm': 'audio/webm',
+                }
+                mime_type = mime_map.get(ext, 'audio/mp4')
+
+                prompt = (
+                    f"Please transcribe this audio recording accurately. "
+                    f"The user is likely speaking in {lang_name} or a mix of {lang_name} and English. "
+                    f"Return ONLY the transcribed text, nothing else. "
+                    f"If you cannot understand the audio, return the text: [unclear]"
+                )
+
+                response = gemma_model.generate_content(
+                    [
+                        {
+                            'mime_type': mime_type,
+                            'data': audio_bytes
+                        },
+                        prompt
+                    ],
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=256,
+                        temperature=0.1,  # Low temperature for accurate transcription
+                    ),
+                    request_options={'timeout': 20}
+                )
+
+                raw_text = response.text.strip()
+                log_debug(f"Gemini transcription: {raw_text}")
+
+                # If Gemini couldn't understand, treat it as a failure
+                if raw_text and raw_text != '[unclear]' and len(raw_text) > 1:
+                    transcription = raw_text
+
+            except Exception as e:
+                log_debug(f"Gemini voice transcription failed: {e}")
+
+        # --- Strategy 2: Python SpeechRecognition fallback ---
+        if transcription is None:
+            try:
+                import speech_recognition as sr
+                recognizer = sr.Recognizer()
+                with sr.AudioFile(filepath) as source:
+                    audio_data = recognizer.record(source)
+                # Use Google Web Speech API (free, no key needed)
+                lang_code = language if language != 'tcy' else 'kn'  # Tulu fallback to Kannada
+                transcription = recognizer.recognize_google(audio_data, language=lang_code)
+                log_debug(f"SpeechRecognition transcription: {transcription}")
+            except ImportError:
+                log_debug("SpeechRecognition library not installed.")
+            except Exception as e:
+                log_debug(f"SpeechRecognition failed: {e}")
+
+        # Clean up the temp file
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except Exception:
+            pass
+
+        if transcription:
+            return jsonify({'transcription': transcription, 'language': language}), 200
+        else:
+            # Return a friendly message so the user knows voice didn't work
+            fallback_msg = "Voice transcription is currently unavailable. Please type your message."
+            if language != 'en':
+                try:
+                    from services.language_service import translate_text
+                    fallback_msg = translate_text(fallback_msg, language)
+                except Exception:
+                    pass
+            return jsonify({
+                'transcription': None,
+                'error': fallback_msg
+            }), 200
+
+    except Exception as e:
+        log_debug(f"Voice endpoint error: {e}")
+        return jsonify({'error': str(e)}), 500

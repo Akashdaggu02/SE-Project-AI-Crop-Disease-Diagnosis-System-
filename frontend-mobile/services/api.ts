@@ -10,15 +10,12 @@ import { Platform } from 'react-native';
  *
  * Current LAN IP: 10.12.234.242
  */
-export const BACKEND_HOST = '10.12.234.242';
-export const BACKEND_PORT = 5000;
-export const API_URL = Platform.OS === 'web'
-    ? `http://localhost:${BACKEND_PORT}/api/`
-    : `http://${BACKEND_HOST}:${BACKEND_PORT}/api/`; // LAN IP is more reliable since loca.lt is down
+export const BACKEND_HOST = 'ai-crop-disease-diagnosis-system.onrender.com';
+export const API_URL = `https://${BACKEND_HOST}/api/`;
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 30000, // 30 second timeout
+    timeout: 120000, // 120 second timeout for Render coldstarts and Gemini processing
 });
 
 /**

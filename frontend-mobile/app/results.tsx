@@ -137,22 +137,25 @@ export default function ResultsScreen() {
 
     const { prediction, disease_info, pesticide_recommendations, weather_advice } = result;
     // We use the translations returned by the server. 
-    // They are already tailored to the requested language.
+    // They are already tailored to the language used at diagnosis time.
+    // Use a helper to always prefer stored translations — avoids mixing
+    // original diagnosis language with the current app language.
     const labels = result.ui_translations || {};
+    const lt = (key: string) => labels[key] || t(key as any);
 
     // Make the disease name look nice (remove underscores)
     let displayDisease = prediction.disease_local || (prediction.disease ? prediction.disease.replace(/___/g, ': ').replace(/_/g, ' ') : 'Unknown Disease');
     if (prediction.disease === 'Healthy' && !prediction.disease_local) {
-        displayDisease = t('healthy');
+        displayDisease = lt('healthy');
     }
 
     let displayStage = prediction.stage_local || prediction.stage;
     if (prediction.stage === 'Healthy Stage' && !prediction.stage_local) {
-        displayStage = t('healthyStage');
+        displayStage = lt('healthyStage');
     } else if (prediction.stage && !prediction.stage_local) {
         // Try to translate the stage key (e.g., 'early', 'late')
         const stageKey = prediction.stage.toLowerCase().replace(' ', '_');
-        displayStage = t(stageKey as any) || prediction.stage;
+        displayStage = lt(stageKey) || prediction.stage;
     }
 
     return (
@@ -166,8 +169,8 @@ export default function ResultsScreen() {
                 )}
                 <Text style={[styles.statusText, { color: prediction.confidence > 80 ? '#2e7d32' : '#ef6c00' }]}>
                     {prediction.disease === 'Healthy'
-                        ? (labels.healthy_crop || t('healthyCrop'))
-                        : (labels.potential_disease || t('potentialDisease'))}
+                        ? lt('healthy_crop')
+                        : lt('potential_disease')}
                 </Text>
             </View>
 
@@ -175,7 +178,7 @@ export default function ResultsScreen() {
             <View style={[styles.section, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
                 <View style={styles.titleRow}>
                     <Text style={[styles.cropTitle, { color: isDarkMode ? '#aaa' : '#666' }]}>
-                        {labels[`crop_${prediction.crop.toLowerCase()}`] || t(`crop_${prediction.crop.toLowerCase()}` as any)}
+                        {labels[`crop_${prediction.crop.toLowerCase()}`] || prediction.crop_local || prediction.crop}
                     </Text>
                     <View style={[styles.stageBadge, { backgroundColor: isDarkMode ? '#333' : '#f0f0f0' }]}>
                         <Text style={[styles.stageText, { color: isDarkMode ? '#ccc' : '#444' }]}>{displayStage}</Text>
@@ -190,11 +193,11 @@ export default function ResultsScreen() {
 
                 <View style={styles.statsRow}>
                     <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#2c2c2c' : '#f9f9f9' }]}>
-                        <Text style={[styles.statLabel, { color: isDarkMode ? '#888' : '#888' }]}>{labels.severity || t('severity')}</Text>
+                        <Text style={[styles.statLabel, { color: isDarkMode ? '#888' : '#888' }]}>{lt('severity')}</Text>
                         <Text style={[styles.statValue, { color: isDarkMode ? '#fff' : '#333' }]}>{prediction.severity_percent ? prediction.severity_percent.toFixed(1) + '%' : 'N/A'}</Text>
                     </View>
                     <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#2c2c2c' : '#f9f9f9' }]}>
-                        <Text style={[styles.statLabel, { color: isDarkMode ? '#888' : '#888' }]}>{labels.diagnosis_id || t('diagnosisId')}</Text>
+                        <Text style={[styles.statLabel, { color: isDarkMode ? '#888' : '#888' }]}>{lt('diagnosis_id')}</Text>
                         <Text style={[styles.statValue, { color: isDarkMode ? '#fff' : '#333' }]}>#{result.diagnosis_id || 'N/A'}</Text>
                     </View>
                 </View>
@@ -214,7 +217,7 @@ export default function ResultsScreen() {
                 <TouchableOpacity style={styles.actionButton} onPress={playVoice}>
                     {isPlaying ? <Headphones size={20} color="#fff" /> : <Volume2 size={20} color="#fff" />}
                     <Text style={styles.actionButtonText}>
-                        {isPlaying ? (labels.pause_explanation || t('pauseExplanation')) : (labels.voice_explanation || t('voiceExplanation'))}
+                        {isPlaying ? lt('pause_explanation') : lt('voice_explanation')}
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -227,7 +230,7 @@ export default function ResultsScreen() {
                     ) : (
                         <>
                             <Download size={20} color="#4caf50" />
-                            <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>{labels.share_report || t('shareReport')}</Text>
+                            <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>{lt('share_report')}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -237,20 +240,20 @@ export default function ResultsScreen() {
                 <View style={[styles.weatherBox, { backgroundColor: isDarkMode ? '#1a2c3f' : '#e3f2fd' }]}>
                     <Info size={20} color={isDarkMode ? '#64b5f6' : '#1976d2'} />
                     <View style={styles.weatherContent}>
-                        <Text style={[styles.weatherTitle, { color: isDarkMode ? '#64b5f6' : '#1976d2' }]}>{labels.weather_advice || t('weatherAdvice')}</Text>
+                        <Text style={[styles.weatherTitle, { color: isDarkMode ? '#64b5f6' : '#1976d2' }]}>{lt('weather_advice')}</Text>
                         <Text style={[styles.weatherText, { color: isDarkMode ? '#ccc' : '#444' }]}>{weather_advice}</Text>
                     </View>
                 </View>
             )}
 
             <View style={[styles.section, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
-                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{labels.disease_info || t('diseaseInfo')}</Text>
+                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{lt('disease_info')}</Text>
                 <Text style={[styles.infoText, { color: isDarkMode ? '#ccc' : '#555' }]}>
-                    {disease_info.description || (prediction.disease === 'Healthy' ? t('diseaseDescription') : '')}
+                    {disease_info.description || (prediction.disease === 'Healthy' ? lt('diseaseDescription') : '')}
                 </Text>
-                <Text style={[styles.subSubtitle, { color: isDarkMode ? '#ddd' : '#444' }]}>{labels.symptoms || t('symptoms')}:</Text>
+                <Text style={[styles.subSubtitle, { color: isDarkMode ? '#ddd' : '#444' }]}>{lt('symptoms')}:</Text>
                 <Text style={[styles.infoText, { color: isDarkMode ? '#ccc' : '#555' }]}>
-                    {disease_info.symptoms || (prediction.disease === 'Healthy' ? t('symptomsHealthy') : '')}
+                    {disease_info.symptoms || (prediction.disease === 'Healthy' ? lt('symptomsHealthy') : '')}
                 </Text>
             </View>
 
@@ -258,17 +261,17 @@ export default function ResultsScreen() {
                 <>
                     <View style={[styles.section, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{labels.treatment_plan || t('treatmentPlan')}</Text>
+                            <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{lt('treatment_plan')}</Text>
                             <View style={[styles.urgencyBadge, { backgroundColor: (pesticide_recommendations?.urgency || 'medium') === 'high' ? (isDarkMode ? '#4a1515' : '#ffebee') : (isDarkMode ? '#1e3b20' : '#e8f5e9') }]}>
                                 <Text style={[styles.urgencyText, { color: (pesticide_recommendations?.urgency || 'medium') === 'high' ? (isDarkMode ? '#ff8a80' : '#d32f2f') : (isDarkMode ? '#81c784' : '#2e7d32') }]}>
-                                    {(pesticide_recommendations?.urgency || 'medium').toUpperCase()} {labels.urgency || t('urgency')}
+                                    {(pesticide_recommendations?.urgency || 'medium').toUpperCase()} {lt('urgency')}
                                 </Text>
                             </View>
                         </View>
 
                         <Text style={[styles.approachText, { color: isDarkMode ? '#bbb' : '#555' }]}>{pesticide_recommendations.treatment_approach}</Text>
 
-                        <Text style={[styles.subSubtitle, { color: isDarkMode ? '#ddd' : '#444' }]}>{labels.recommended_pesticides || t('recommendedPesticides')}:</Text>
+                        <Text style={[styles.subSubtitle, { color: isDarkMode ? '#ddd' : '#444' }]}>{lt('recommended_pesticides')}:</Text>
                         {pesticide_recommendations.recommended_pesticides.map((pest: any, index: number) => (
                             <PesticideCard key={index} pesticide={pest} />
                         ))}
@@ -284,14 +287,14 @@ export default function ResultsScreen() {
             )}
 
             <View style={[styles.section, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff' }]}>
-                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{labels.prevention_best_practices || t('preventionBestPractices')}</Text>
+                <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{lt('prevention_best_practices')}</Text>
                 <Text style={[styles.infoText, { color: isDarkMode ? '#ccc' : '#555' }]}>
-                    {disease_info.prevention_steps || (prediction.disease === 'Healthy' ? t('preventionHealthy') : '')}
+                    {disease_info.prevention_steps || (prediction.disease === 'Healthy' ? lt('preventionHealthy') : '')}
                 </Text>
 
                 {disease_info.organic_alternatives && (
                     <>
-                        <Text style={[styles.subSubtitle, { color: isDarkMode ? '#ddd' : '#444' }]}>🌿 {labels.organic_alternatives || t('organicAlternatives')}:</Text>
+                        <Text style={[styles.subSubtitle, { color: isDarkMode ? '#ddd' : '#444' }]}>🌿 {lt('organic_alternatives')}:</Text>
                         <Text style={[styles.infoText, { color: isDarkMode ? '#ccc' : '#555' }]}>{disease_info.organic_alternatives}</Text>
                     </>
                 )}
@@ -299,7 +302,7 @@ export default function ResultsScreen() {
 
             <TouchableOpacity style={[styles.doneButton, { backgroundColor: isDarkMode ? '#4caf50' : '#333' }]} onPress={() => router.replace('/(tabs)')}>
                 <Check color="#fff" size={20} style={{ marginRight: 8 }} />
-                <Text style={styles.doneButtonText}>{labels.finish_diagnosis || t('finishDiagnosis')}</Text>
+                <Text style={styles.doneButtonText}>{lt('finish_diagnosis')}</Text>
             </TouchableOpacity>
         </ScrollView >
     );
