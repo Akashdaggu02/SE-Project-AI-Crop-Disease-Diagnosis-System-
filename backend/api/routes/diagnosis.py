@@ -562,6 +562,10 @@ def get_diagnosis_details(diagnosis_id):
             
         ui_labels = get_translated_ui_labels(language)
         
+        # Generate an audio file reading out the result (so history also has voice)
+        from services.voice_service import generate_diagnosis_voice
+        voice_file = generate_diagnosis_voice(translated_result, language)
+        
         response = {
             'diagnosis_id': str(diagnosis.get('_id') or diagnosis.get('id')),
             'prediction': translated_result,
@@ -570,7 +574,8 @@ def get_diagnosis_details(diagnosis_id):
             'weather_advice': None, # We don't save weather advice to history
             'language': language,
             'ui_translations': ui_labels,
-            'cost': cost_info
+            'cost': cost_info,
+            'voice_file': f'/api/diagnosis/voice/{os.path.basename(voice_file)}' if voice_file else None
         }
         
         return jsonify(response), 200

@@ -54,8 +54,16 @@ export default function ResultsScreen() {
             }
 
             setIsPlaying(true);
-            const baseUrl = API_URL.replace('/api', '').replace(/\/$/, '');
-            const audioUrl = `${baseUrl}${result.voice_file}`;
+
+            // Clean up the base URL and the path so we don't end up with double slashes (e.g. .com//api/...)
+            let baseUrl = API_URL;
+            if (baseUrl.endsWith('/api/')) baseUrl = baseUrl.slice(0, -5);
+            else if (baseUrl.endsWith('/api')) baseUrl = baseUrl.slice(0, -4);
+            else if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+
+            const cleanVoiceFile = result.voice_file.startsWith('/') ? result.voice_file : `/${result.voice_file}`;
+            const audioUrl = `${baseUrl}${cleanVoiceFile}`;
+
             console.log('Playing audio from:', audioUrl);
 
             const { sound: newSound } = await Audio.Sound.createAsync(

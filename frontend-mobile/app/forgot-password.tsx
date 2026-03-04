@@ -30,14 +30,16 @@ export default function ForgotPasswordScreen() {
             Alert.alert(
                 '📧 OTP Sent!',
                 `A password reset code has been sent to ${trimmed}. Check your inbox.`,
-                [],
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            router.push({ pathname: '/reset-password', params: { email: trimmed } });
+                        }
+                    }
+                ],
                 { cancelable: false }
             );
-
-            // Automatically redirect after showing the alert
-            setTimeout(() => {
-                router.push({ pathname: '/reset-password', params: { email: trimmed } });
-            }, 1000);
         } catch (error: any) {
             const message = error.response?.data?.error || 'Something went wrong. Please try again.';
             Alert.alert('Error', message);
