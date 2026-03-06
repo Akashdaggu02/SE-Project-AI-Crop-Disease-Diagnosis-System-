@@ -385,7 +385,7 @@ Respond ONLY in {lang_name}.
 """
 
     
-    # If Gemini Flash model is ready, use it for text chat
+    # If Gemma 3 model is ready, use it for text chat
     if gemma_model and settings.GOOGLE_GEMINI_API_KEY:
         try:
             # Fetch live knowledge from the database to ground the AI
@@ -406,7 +406,7 @@ Respond ONLY in {lang_name}.
             result_text = result_text.replace('**', '').replace('* ', '• ')
             return result_text
         except Exception as e:
-            print(f"Gemini Flash chat error: {e}")
+            print(f"Gemma 3 chat error: {e}")
             return get_fallback_response(message, language, context)
     else:
         # If AI isn't configured, use the backup system
