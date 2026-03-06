@@ -8,10 +8,10 @@ class Settings:
     """Application configuration settings - like the control panel for our app"""
     
     # Security keys - keep these secret!
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
-    DEBUG = os.getenv('DEBUG', 'True') == 'True' # Set to True for testing, False for real use
-    HOST = os.getenv('HOST', '0.0.0.0') # Allow connections from anywhere
-    PORT = int(os.getenv('PORT', 5000)) # The door number our server listens on
+    SECRET_KEY = os.getenv('SECRET_KEY', 'change-me-in-production')
+    DEBUG = os.getenv('DEBUG', 'True') == 'True'
+    HOST = os.getenv('HOST', '0.0.0.0')
+    PORT = int(os.getenv('PORT', 5000))
     
     # Where we store our database (Now using MongoDB)
     MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
@@ -78,15 +78,16 @@ class Settings:
     WEATHER_API_URL = 'https://api.openweathermap.org/data/2.5/weather'
     
     # User session settings
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
-    JWT_EXPIRATION_HOURS = 24 * 7  # Keep users logged in for a week
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'change-me-in-production')
+    JWT_EXPIRATION_HOURS = 24 * 7
 
     # Email settings for OTP delivery via EmailJS (HTTPS REST API)
     # Works on Render (no SMTP needed), sends through your Gmail account
-    EMAILJS_SERVICE_ID = os.getenv('EMAILJS_SERVICE_ID', 'service_qpfufzh')
-    EMAILJS_TEMPLATE_ID = os.getenv('EMAILJS_TEMPLATE_ID', 'template_2yxtjsp')
-    EMAILJS_PUBLIC_KEY = os.getenv('EMAILJS_PUBLIC_KEY', '3SwXJU-t4QdJQNZDR')
-    SMTP_FROM = os.getenv('SMTP_FROM', 'mohansai1810@gmail.com')
+    EMAILJS_SERVICE_ID = os.getenv('EMAILJS_SERVICE_ID', '')
+    EMAILJS_TEMPLATE_ID = os.getenv('EMAILJS_TEMPLATE_ID', '')
+    EMAILJS_PUBLIC_KEY = os.getenv('EMAILJS_PUBLIC_KEY', '')
+    EMAILJS_PRIVATE_KEY = os.getenv('EMAILJS_PRIVATE_KEY', '')
+    SMTP_FROM = os.getenv('SMTP_FROM', '')
     
     # Quality control
     MIN_IMAGE_QUALITY_SCORE = 0.3 # Reject blurry images
