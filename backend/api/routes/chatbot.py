@@ -873,7 +873,7 @@ def transcribe_voice():
         transcription = None
 
         # --- Strategy 1: Use Gemini to transcribe the audio ---
-        if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY and gemma_model:
+        if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY:
             try:
                 lang_name = LANGUAGE_NAMES.get(language, 'English')
                 # Read the audio bytes and send them to Gemini
