@@ -896,7 +896,7 @@ def transcribe_voice():
                         headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
                         files={"file": (filename, f)},
                         data={
-                            "model": "distil-whisper-large-v3-en" if whisper_lang == 'en' else "whisper-large-v3",
+                            "model": "whisper-large-v3-turbo",
                             "language": whisper_lang,
                             "response_format": "text"
                         },
