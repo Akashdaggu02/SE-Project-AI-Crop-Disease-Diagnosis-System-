@@ -68,9 +68,10 @@ class Settings:
     GOOGLE_CLOUD_TTS_API_KEY = os.getenv('GOOGLE_CLOUD_TTS_API_KEY', '')
     VOICE_OUTPUT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'voice_outputs')
     
-    # Chatbot keys (Gemini AI)
+    # Chatbot keys (Gemini AI & Groq Voice)
     CHATBOT_SERVICE = os.getenv('CHATBOT_SERVICE', 'gemini')  
     GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_GEMINI_API_KEY', '')
+    GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
     
     # Weather settings

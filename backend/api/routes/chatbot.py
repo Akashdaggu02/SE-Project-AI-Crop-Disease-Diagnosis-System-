@@ -872,63 +872,47 @@ def transcribe_voice():
 
         transcription = None
 
-        # --- Strategy 1: Use Gemini File Upload API to transcribe the audio ---
-        if GEMINI_AVAILABLE and settings.GOOGLE_GEMINI_API_KEY:
-            uploaded_file = None
+        # --- Strategy 1: Use Groq Whisper API to transcribe the audio ---
+        if settings.GROQ_API_KEY:
             try:
-                lang_name = LANGUAGE_NAMES.get(language, 'English')
-
-                # Determine mime type from file extension
-                ext = filename.rsplit('.', 1)[-1].lower()
-                mime_map = {
-                    'mp4': 'audio/mp4',
-                    'm4a': 'audio/mp4',
-                    'mp3': 'audio/mpeg',
-                    'wav': 'audio/wav',
-                    'ogg': 'audio/ogg',
-                    'webm': 'audio/webm',
+                import requests
+                # Convert our app language code to ISO-639-1 format for Whisper
+                groq_lang_map = {
+                    'en': 'en',
+                    'hi': 'hi',
+                    'te': 'te',
+                    'ta': 'ta',
+                    'kn': 'kn',
+                    'mr': 'mr',
+                    'tcy': 'kn' # Tulu fallback to Kannada
                 }
-                mime_type = mime_map.get(ext, 'audio/mp4')
+                whisper_lang = groq_lang_map.get(language, 'en')
 
-                log_debug(f"Uploading audio to Gemini File API: {filepath}, mime: {mime_type}")
+                log_debug(f"Uploading audio to Groq Whisper API: {filepath}, lang: {whisper_lang}")
 
-                # Upload the audio file using Gemini's File API (required for audio/video)
-                uploaded_file = genai.upload_file(filepath, mime_type=mime_type)
-                log_debug(f"Gemini file uploaded: {uploaded_file.name}")
-
-                prompt = (
-                    f"Please transcribe this audio recording accurately. "
-                    f"The user is likely speaking in {lang_name} or a mix of {lang_name} and English. "
-                    f"Return ONLY the transcribed text, nothing else. "
-                    f"If you cannot understand the audio, return the text: [unclear]"
-                )
-
-                # Use gemini-2.0-flash with the uploaded file reference (supports audio)
-                voice_model = genai.GenerativeModel('models/gemini-2.0-flash')
-                response = voice_model.generate_content(
-                    [uploaded_file, prompt],
-                    generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=256,
-                        temperature=0.1,
-                    ),
-                    request_options={'timeout': 30}
-                )
-
-                raw_text = response.text.strip()
-                log_debug(f"Gemini transcription: {raw_text}")
-
-                if raw_text and raw_text != '[unclear]' and len(raw_text) > 1:
-                    transcription = raw_text
+                with open(filepath, 'rb') as f:
+                    response = requests.post(
+                        "https://api.groq.com/openai/v1/audio/transcriptions",
+                        headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
+                        files={"file": (filename, f)},
+                        data={
+                            "model": "distil-whisper-large-v3-en" if whisper_lang == 'en' else "whisper-large-v3",
+                            "language": whisper_lang,
+                            "response_format": "text"
+                        },
+                        timeout=30
+                    )
+                
+                if response.status_code == 200:
+                    raw_text = response.text.strip()
+                    log_debug(f"Groq transcription: {raw_text}")
+                    if raw_text:
+                        transcription = raw_text
+                else:
+                    log_debug(f"Groq voice transcription failed with status {response.status_code}: {response.text}")
 
             except Exception as e:
-                log_debug(f"Gemini voice transcription failed: {e}")
-            finally:
-                # Clean up the uploaded file from Gemini's servers
-                if uploaded_file:
-                    try:
-                        genai.delete_file(uploaded_file.name)
-                    except Exception:
-                        pass
+                log_debug(f"Groq exception: {e}")
 
         # --- Strategy 2: Python SpeechRecognition fallback ---
         if transcription is None:
