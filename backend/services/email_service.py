@@ -51,9 +51,10 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
     service_id = settings.EMAILJS_SERVICE_ID
     template_id = settings.EMAILJS_TEMPLATE_ID
     public_key = settings.EMAILJS_PUBLIC_KEY
+    private_key = settings.EMAILJS_PRIVATE_KEY
 
     if not service_id or not template_id or not public_key:
-        print("[EmailService] ❌ EmailJS credentials not configured. Set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY.")
+        print("[EmailService] ERROR: EmailJS credentials not configured. Set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY.")
         return False
 
     # Build the template parameters that match the EmailJS template variables
@@ -68,6 +69,7 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         "service_id": service_id,
         "template_id": template_id,
         "user_id": public_key,
+        "accessToken": private_key,  # Required when non-browser API is enabled (strict mode)
         "template_params": template_params,
     }
 
@@ -80,17 +82,17 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
         )
 
         if response.status_code == 200:
-            print(f"[EmailService] ✅ OTP email sent to {to_email} via EmailJS (purpose: {purpose})")
+            print(f"[EmailService] SUCCESS: OTP email sent to {to_email} via EmailJS (purpose: {purpose})")
             return True
         else:
-            print(f"[EmailService] ❌ EmailJS returned {response.status_code}: {response.text}")
+            print(f"[EmailService] ERROR: EmailJS returned {response.status_code}: {response.text}")
             return False
 
     except requests.exceptions.Timeout:
-        print(f"[EmailService] ❌ EmailJS request timed out")
+        print(f"[EmailService] ERROR: EmailJS request timed out")
         return False
     except Exception as e:
-        print(f"[EmailService] ❌ EmailJS error: {type(e).__name__}: {e}")
+        print(f"[EmailService] ERROR: EmailJS error: {type(e).__name__}: {e}")
         return False
 
 
