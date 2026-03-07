@@ -22,5 +22,5 @@ def test_root_endpoint(client):
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data['message'] == 'Welcome! The API is running successfully.'
-    assert json_data['service'] == 'Smart Crop Health API'
+    assert json_data['service'] == 'AI Crop Diagnosis API'
     assert 'endpoints' in json_data
