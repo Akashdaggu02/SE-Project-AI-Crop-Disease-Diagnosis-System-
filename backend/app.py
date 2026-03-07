@@ -129,7 +129,7 @@ def index():
     """Root endpoint providing system status and guidance"""
     return jsonify({
         "status": "online",
-        "service": "AI Crop Diagnosis API",
+        "service": "Smart Crop Health API",
         "version": "1.0.0",
         "message": "Welcome! The API is running successfully.",
         "endpoints": {
