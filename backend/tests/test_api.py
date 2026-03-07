@@ -14,7 +14,7 @@ def test_health_check(client):
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data['status'] == 'healthy'
-    assert json_data['service'] == 'AI Crop Diagnosis API'
+    assert json_data['service'] == 'Smart Crop Health API'
 
 def test_root_endpoint(client):
     """Test that the root endpoint returns 200 and welcome message"""
@@ -22,4 +22,5 @@ def test_root_endpoint(client):
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data['message'] == 'Welcome! The API is running successfully.'
+    assert json_data['service'] == 'Smart Crop Health API'
     assert 'endpoints' in json_data
