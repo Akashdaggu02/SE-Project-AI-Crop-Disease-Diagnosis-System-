@@ -410,7 +410,7 @@ export default function ChatScreen() {
                     contentContainerStyle={styles.messageList}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                     onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    ListFooterComponent={<View style={{ height: Platform.OS === 'web' ? 60 : 20 }} />}
+                    ListFooterComponent={<View style={{ height: Platform.OS === 'web' ? 100 : 20 }} />}
                 />
             </View>
 
@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        // On web/mobile browser, the bottom tabs might overlap
-        paddingBottom: Platform.OS === 'ios' ? 0 : (Platform.OS === 'web' ? 70 : 20),
+        // On web/mobile browser, the bottom tabs and browser nav might overlap
+        paddingBottom: Platform.OS === 'ios' ? 0 : (Platform.OS === 'web' ? 90 : 20),
     },
     header: {
         paddingTop: 60,
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     },
     messageList: {
         padding: 16,
-        paddingBottom: Platform.OS === 'web' ? 40 : 20,
+        paddingBottom: Platform.OS === 'web' ? 60 : 20,
     },
     messageWrapper: {
         flexDirection: 'row',
