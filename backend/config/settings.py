@@ -82,13 +82,11 @@ class Settings:
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'change-me-in-production')
     JWT_EXPIRATION_HOURS = 24 * 7
 
-    # Email settings for OTP delivery via EmailJS (HTTPS REST API)
-    # Works on Render (no SMTP needed), sends through your Gmail account
-    EMAILJS_SERVICE_ID = os.getenv('EMAILJS_SERVICE_ID', '')
-    EMAILJS_TEMPLATE_ID = os.getenv('EMAILJS_TEMPLATE_ID', '')
-    EMAILJS_PUBLIC_KEY = os.getenv('EMAILJS_PUBLIC_KEY', '')
-    EMAILJS_PRIVATE_KEY = os.getenv('EMAILJS_PRIVATE_KEY', '')
-    SMTP_FROM = os.getenv('SMTP_FROM', '')
+    # Email settings for OTP delivery via SendGrid (HTTPS REST API)
+    # Works on Render (no SMTP needed), sends through SendGrid REST API
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
+    SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'mohansai1810@gmail.com')
+    SMTP_FROM = os.getenv('SMTP_FROM', 'mohansai1810@gmail.com')
     
     # Quality control
     MIN_IMAGE_QUALITY_SCORE = 0.3 # Reject blurry images
