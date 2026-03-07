@@ -40,6 +40,7 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+.env*.local
 
 # Database
 *.db
@@ -55,6 +56,7 @@ node_modules/
 .next/
 out/
 build/
+dist/
 
 # React Native / Expo
 .expo/
@@ -68,11 +70,11 @@ npm-debug.*
 *.orig.*
 web-build/
 
-# Model files (optional - uncomment if models are too large)
+# Model files
 # models/*.h5
 # models/*.keras
 
-# Dataset - excluded from repository
+# Dataset
 dataset/
 
 # Temporary files
@@ -101,7 +103,18 @@ test.mp3
 test.http
 
 # Translation and Cache JSON files
-translated_privacy.json
 translated_privacy.txt
 translations_local.json
 translations_output.json
+.vercel
+
+# Project specific secrets
+backend/token.json
+backend/credentials.json
+backend/*.txt
+backend/*.log
+
+# Vercel
+frontend-mobile/dist/
+frontend-mobile/.vercel/
+frontend-mobile/.env.local
