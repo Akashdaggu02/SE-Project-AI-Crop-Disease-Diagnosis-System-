@@ -1,0 +1,6 @@
+{
+    "buildCommand": "cd frontend-mobile && npm install && npx expo export -p web",
+    "outputDirectory": "frontend-mobile/dist",
+    "cleanUrls": true,
+    "trailingSlash": false
+}

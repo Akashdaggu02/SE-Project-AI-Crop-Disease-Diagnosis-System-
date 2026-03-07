@@ -65,11 +65,7 @@ export default function ProfileScreen() {
             } catch (e) {
                 console.error('SignOut error:', e);
             }
-            if (Platform.OS === 'web') {
-                (window as any).location.href = '/login';
-            } else {
-                router.replace('/login');
-            }
+            router.replace('/login');
         };
 
         if (Platform.OS === 'web') {
