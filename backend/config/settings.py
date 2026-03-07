@@ -82,10 +82,11 @@ class Settings:
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'change-me-in-production')
     JWT_EXPIRATION_HOURS = 24 * 7
 
-    # Email settings for OTP delivery via SendGrid (HTTPS REST API)
-    # Works on Render (no SMTP needed), sends through SendGrid REST API
-    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
-    SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'mohansai1810@gmail.com')
+    # Email settings for OTP delivery via Gmail REST API
+    # Works on Render (no SMTP needed)
+    GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')
+    GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '')
+    GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '')
     SMTP_FROM = os.getenv('SMTP_FROM', 'mohansai1810@gmail.com')
     
     # Quality control
