@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert, SafeAreaView } from 'react-native';
 import { Send, User, Bot, HelpCircle, Video, UploadCloud, Mic, Square } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -401,15 +401,18 @@ export default function ChatScreen() {
                 </View>
             </View>
 
-            <FlatList
-                ref={flatListRef}
-                data={messages}
-                renderItem={renderMessage}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.messageList}
-                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            />
+            <View style={{ flex: 1 }}>
+                <FlatList
+                    ref={flatListRef}
+                    data={messages}
+                    renderItem={renderMessage}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.messageList}
+                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                    onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                    ListFooterComponent={<View style={{ height: Platform.OS === 'web' ? 60 : 20 }} />}
+                />
+            </View>
 
 
             {/* Selected Media Preview */}
@@ -493,7 +496,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        paddingBottom: Platform.OS === 'ios' ? 0 : 20,
+        // On web/mobile browser, the bottom tabs might overlap
+        paddingBottom: Platform.OS === 'ios' ? 0 : (Platform.OS === 'web' ? 70 : 20),
     },
     header: {
         paddingTop: 60,
@@ -528,7 +532,7 @@ const styles = StyleSheet.create({
     },
     messageList: {
         padding: 16,
-        paddingBottom: 20,
+        paddingBottom: Platform.OS === 'web' ? 40 : 20,
     },
     messageWrapper: {
         flexDirection: 'row',
