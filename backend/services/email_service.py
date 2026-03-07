@@ -1,6 +1,6 @@
 """
 Email Service - Handles OTP generation, sending, and verification.
-Uses SendGrid (HTTPS REST API) — works on Render since no SMTP ports are needed.
+Uses Gmail API (HTTPS REST API) — works on Render since no SMTP ports are needed.
 """
 import random
 import requests
@@ -11,16 +11,30 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from database.db_connection import db
 from config.settings import settings
+import base64
+from email.message import EmailMessage
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 OTP_EXPIRY_MINUTES = 10
 
-SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
-
-
 def generate_otp() -> str:
     """Generate a cryptographically safe 6-digit OTP."""
     return str(random.SystemRandom().randint(100000, 999999))
+
+
+def get_gmail_service():
+    """Builds and returns the Gmail API service using the stored Refresh Token."""
+    creds = Credentials(
+        token=None,
+        refresh_token=settings.GMAIL_REFRESH_TOKEN,
+        client_id=settings.GMAIL_CLIENT_ID,
+        client_secret=settings.GMAIL_CLIENT_SECRET,
+        token_uri="https://oauth2.googleapis.com/token"
+    )
+    return build('gmail', 'v1', credentials=creds, cache_discovery=False)
 
 
 def test_smtp_connectivity():
@@ -28,28 +42,25 @@ def test_smtp_connectivity():
     Diagnostic — tests email configuration.
     Returns a dict with results.
     """
-    print(f"[EmailService] Using SendGrid REST API (not SMTP).")
-    print(f"[EmailService] SENDGRID_API_KEY set: {bool(settings.SENDGRID_API_KEY)}")
-    print(f"[EmailService] SENDGRID_FROM_EMAIL set: {bool(settings.SENDGRID_FROM_EMAIL)}")
+    print(f"[EmailService] Using Gmail HTTPS API.")
+    print(f"[EmailService] GMAIL_REFRESH_TOKEN set: {bool(settings.GMAIL_REFRESH_TOKEN)}")
+    print(f"[EmailService] SMTP_FROM set: {bool(settings.SMTP_FROM)}")
     return {
-        "mode": "SendGrid HTTPS API (not SMTP)",
-        "api_key_set": bool(settings.SENDGRID_API_KEY),
-        "from_email": settings.SENDGRID_FROM_EMAIL,
-        "note": "Render blocks SMTP ports. SendGrid uses HTTPS (port 443)."
+        "mode": "Gmail HTTP API (not SMTP)",
+        "api_key_set": bool(settings.GMAIL_REFRESH_TOKEN),
+        "from_email": settings.SMTP_FROM,
+        "note": "Render blocks SMTP ports. Gmail API uses HTTPS (port 443)."
     }
 
 
 def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
     """
-    Send an OTP email via SendGrid REST API.
+    Send an OTP email via Gmail HTTPS API.
     purpose: 'verify' for email verification, 'reset' for password reset.
     Returns True on success, False on failure.
     """
-    api_key = settings.SENDGRID_API_KEY
-    from_email = settings.SENDGRID_FROM_EMAIL
-
-    if not api_key or not from_email:
-        print("[EmailService] ERROR: SendGrid credentials not configured.")
+    if not settings.GMAIL_REFRESH_TOKEN or not settings.GMAIL_CLIENT_ID:
+        print("[EmailService] ERROR: Gmail API credentials not configured.")
         return False
 
     subject = "Verify Your Email - AI Crop Diagnosis"
@@ -66,48 +77,28 @@ def send_otp_email(to_email: str, otp: str, purpose: str = 'verify') -> bool:
     </div>
     """
 
-    payload = {
-        "personalizations": [
-            {
-                "to": [{"email": to_email}],
-                "subject": subject
-            }
-        ],
-        "from": {
-            "email": from_email,
-            "name": "AI Crop Diagnosis"
-        },
-        "content": [
-            {
-                "type": "text/html",
-                "value": html_content
-            }
-        ]
-    }
-
     try:
-        response = requests.post(
-            SENDGRID_API_URL,
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            timeout=15
-        )
+        service = get_gmail_service()
+        
+        message = EmailMessage()
+        message.set_content(html_content, subtype='html')
+        message['To'] = to_email
+        message['From'] = settings.SMTP_FROM
+        message['Subject'] = subject
 
-        if response.status_code in (200, 202):
-            print(f"[EmailService] SUCCESS: OTP email sent to {to_email} via SendGrid (purpose: {purpose})")
-            return True
-        else:
-            print(f"[EmailService] ERROR: SendGrid returned {response.status_code}: {response.text}")
-            return False
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        create_message = {'raw': encoded_message}
+        
+        service.users().messages().send(userId="me", body=create_message).execute()
 
-    except requests.exceptions.Timeout:
-        print(f"[EmailService] ERROR: SendGrid request timed out")
+        print(f"[EmailService] SUCCESS: OTP email sent to {to_email} via Gmail API (purpose: {purpose})")
+        return True
+
+    except HttpError as error:
+        print(f"[EmailService] ERROR: Gmail API returned: {error}")
         return False
     except Exception as e:
-        print(f"[EmailService] ERROR: SendGrid error: {type(e).__name__}: {e}")
+        print(f"[EmailService] ERROR: Gmail API error: {type(e).__name__}: {e}")
         return False
 
 
