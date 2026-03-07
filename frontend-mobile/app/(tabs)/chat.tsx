@@ -218,17 +218,23 @@ export default function ChatScreen() {
         try {
             const formData = new FormData();
 
-            const uriParts = uri.split('.');
-            let fileExtension = uriParts[uriParts.length - 1];
-            if (fileExtension === 'm4a' || fileExtension === 'mp4') {
-                fileExtension = 'mp4';
-            }
+            if (Platform.OS !== 'web') {
+                const uriParts = uri.split('.');
+                let fileExtension = uriParts[uriParts.length - 1];
+                if (fileExtension === 'm4a' || fileExtension === 'mp4') {
+                    fileExtension = 'mp4';
+                }
 
-            formData.append('audio', {
-                uri,
-                name: `voice.${fileExtension}`,
-                type: `audio/${fileExtension}`
-            } as any);
+                formData.append('audio', {
+                    uri,
+                    name: `voice.${fileExtension}`,
+                    type: `audio/${fileExtension}`
+                } as any);
+            } else {
+                // On Web, the URI is a blob URL. We must fetch it to get a real Blob.
+                const audioBlob = await fetch(uri).then(r => r.blob());
+                formData.append('audio', audioBlob, 'voice.webm');
+            }
             formData.append('language', language || 'en');
 
             const token = await getItem('userToken');
