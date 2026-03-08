@@ -1,0 +1,49 @@
+# EAS Build Ignore Config
+# Ignore these folders and all their contents
+backend
+database
+training
+UML_Diagrams
+venv
+.venv
+.git
+.vscode
+.vercel
+logs
+dataset
+inspect_output
+inspect_output_v3
+inspect_output_final
+inspect_output_clean
+
+# Ignore specific unnecessary files in the project root
+/*.py
+/*.ps1
+/*.bat
+/*.mp3
+/*.http
+/*.docx
+/*.jpeg
+/*.jpg
+/*.png
+/*.jks
+/*.p12
+/*.keystore
+/*.log
+/.env*
+/LICENSE
+/README.md
+/API_TESTING_GUIDE.md
+/QUICK_START.md
+/RESTART_NEEDED.md
+/SERVER_RUNNING.md
+/SUCCESS_GUIDE.md
+/TENSORFLOW_FIX.md
+/TESTING.md
+/UNIT_TESTING.md
+/devdocs.md
+/vercel.json
+/UNIT_TESTING_DOC.docx
+
+# Explicitly allow the frontend-mobile directory and ALL its contents
+!frontend-mobile/

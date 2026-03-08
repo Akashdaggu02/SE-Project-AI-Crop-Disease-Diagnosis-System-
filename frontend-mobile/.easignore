@@ -1,0 +1,16 @@
+node_modules/
+.git/
+android/
+ios/
+dist/
+.expo/
+.vercel/
+*.jks
+*.p12
+*.keystore
+*.log
+inspect_output*/
+.env.local
+.env*.local
+measure_sizes.py
+sizes.txt
