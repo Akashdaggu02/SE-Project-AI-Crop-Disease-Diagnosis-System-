@@ -395,10 +395,12 @@ export default function ChatScreen() {
             contentContainerStyle={{ flex: 1 }}
         >
             <View style={[styles.header, { backgroundColor: isDarkMode ? '#1e1e1e' : '#fff', borderBottomColor: isDarkMode ? '#333' : '#eee' }]}>
-                <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{t('chatbotTitle')}</Text>
-                <View style={styles.onlineStatus}>
-                    <View style={styles.onlineDot} />
-                    <Text style={[styles.onlineText, { color: isDarkMode ? '#aaa' : '#666' }]}>{t('chatbotOnline')}</Text>
+                <View>
+                    <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>{t('chatbotTitle')}</Text>
+                    <View style={styles.onlineStatus}>
+                        <View style={styles.onlineDot} />
+                        <Text style={[styles.onlineText, { color: isDarkMode ? '#aaa' : '#666' }]}>{t('chatbotOnline')}</Text>
+                    </View>
                 </View>
             </View>
 
@@ -499,14 +501,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     header: {
-        paddingTop: 60,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         paddingHorizontal: 20,
         paddingBottom: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
     },
     headerTitle: {
@@ -537,6 +538,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginBottom: 20,
         maxWidth: '85%',
+        flexShrink: 1,
     },
     userWrapper: {
         alignSelf: 'flex-end',
@@ -569,6 +571,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
+        flexShrink: 1,
     },
     userBubble: {
         backgroundColor: '#4caf50',
@@ -576,6 +579,7 @@ const styles = StyleSheet.create({
     },
     botBubble: {
         borderTopLeftRadius: 4,
+        backgroundColor: '#e8f5e9',
     },
     messageImage: {
         width: 200,
