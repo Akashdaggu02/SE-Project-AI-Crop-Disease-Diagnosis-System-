@@ -22,11 +22,11 @@ const { width } = Dimensions.get('window');
 // Ideally, this list mimics what the backend supports.
 const CROP_IMAGES: Record<string, any> = {
   auto: require('../../assets/images/icon.png'),
-  tomato: require('../../assets/images/tomato.png'),
-  rice: require('../../assets/images/rice.png'),
-  potato: require('../../assets/images/potato.png'),
-  grape: require('../../assets/images/grape.png'),
-  maize: require('../../assets/images/maize.png'),
+  tomato: require('../../assets/images/tomato.jpg'),
+  rice: require('../../assets/images/rice.jpg'),
+  potato: require('../../assets/images/potato.jpg'),
+  grape: require('../../assets/images/grape.jpg'),
+  maize: require('../../assets/images/maize.jpg'),
 };
 
 const DEFAULT_CROPS = [
@@ -678,7 +678,7 @@ export default function DashboardScreen() {
             <Text style={[styles.farmerName, { color: isDarkMode ? '#fff' : '#2c3e50' }]}>{translatedName || (user ? user.name : t('farmer'))}</Text>
           </View>
           <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileAvatarContainer}>
-            <Image source={require('../../assets/images/farmer-avatar.png')} style={styles.profileAvatar} />
+            <Image source={require('../../assets/images/farmer-avatar.jpg')} style={styles.profileAvatar} />
           </TouchableOpacity>
         </View>
         <View style={styles.headerRight}>
