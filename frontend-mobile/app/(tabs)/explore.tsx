@@ -28,11 +28,11 @@ export default function ExploreScreen() {
   const themeParams = Colors[colorScheme];
 
   const CROPS = [
-    { id: 'tomato', name: t('crop_tomato'), image: require('../../assets/images/tomato.png'), color: '#FF7676' },
-    { id: 'potato', name: t('crop_potato'), image: require('../../assets/images/potato.png'), color: '#D4B886' },
-    { id: 'rice', name: t('crop_rice'), image: require('../../assets/images/rice.png'), color: '#F7E7C3' },
-    { id: 'grape', name: t('crop_grape'), image: require('../../assets/images/grape.png'), color: '#9B72CF' },
-    { id: 'maize', name: t('crop_maize'), image: require('../../assets/images/maize.png'), color: '#FFE05C' },
+    { id: 'tomato', name: t('crop_tomato'), image: require('../../assets/images/tomato.jpg'), color: '#FF7676' },
+    { id: 'potato', name: t('crop_potato'), image: require('../../assets/images/potato.jpg'), color: '#D4B886' },
+    { id: 'rice', name: t('crop_rice'), image: require('../../assets/images/rice.jpg'), color: '#F7E7C3' },
+    { id: 'grape', name: t('crop_grape'), image: require('../../assets/images/grape.jpg'), color: '#9B72CF' },
+    { id: 'maize', name: t('crop_maize'), image: require('../../assets/images/maize.jpg'), color: '#FFE05C' },
   ];
 
   const DISEASES: DiseaseData[] = [
