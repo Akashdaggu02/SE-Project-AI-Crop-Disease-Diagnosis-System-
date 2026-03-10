@@ -300,11 +300,6 @@ The following crops and diseases are supported by our deep learning models for u
 - Gray Leaf Spot
 - Northern Leaf Blight
 
-### 🌿 Cotton
-- Healthy
-- Bacterial Blight
-- Curl Virus
-
 ---
 
 ## 💬 Agri-Bot Support (Chatbot ONLY)
