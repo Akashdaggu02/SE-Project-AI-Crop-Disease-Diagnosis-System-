@@ -6,6 +6,30 @@
 
 A comprehensive, farmer-friendly mobile and web application for crop disease detection, diagnosis, and treatment recommendations with multilingual support.
 
+## Table of Contents
+
+- [Features](#features)
+- [Architecture Diagrams](#architecture-diagrams)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Key Documentation](#key-documentation)
+- [Setup Instructions](#setup-instructions)
+- [Deployment](#deployment)
+- [API Endpoints](#api-endpoints)
+- [Authentication](#authentication)
+- [Supported Crops & Diseases (AI Image Diagnosis)](#supported-crops--diseases-ai-image-diagnosis)
+- [Agri-Bot Support (Chatbot ONLY)](#agri-bot-support-chatbot-only)
+- [Supported Languages](#supported-languages)
+- [Database Collections (MongoDB)](#database-collections-mongodb)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Notes](#notes)
+- [Next Steps](#next-steps)
+- [For Farmers](#for-farmers)
+- [License](#license)
+- [Support](#support)
+
+
 ##  Features
 
 ###  Disease Detection (Epic 1)
@@ -111,11 +135,11 @@ AI-Crop-Diagnosis/
 │   ├── services/            # Business logic services
 │   ├── utils/               # Utility functions
 │   ├── app.py              # Main Flask application
+│   ├── models/                  # Pre-trained H5 models
 │   └── requirements.txt     # Python dependencies
 ├── database/
 │   ├── seed/               # Seed data for MongoDB
-│   └── mongo_db.py         # MongoDB connection wrapper
-├── models/                  # Pre-trained H5 models
+│   └── mongo_db.py         # MongoDB connection wrapper                  
 ├── frontend-mobile/         # Expo React Native app
 ├── UML_Diagrams/            # System architecture diagrams
 ├── doc md/                  # Project documentation
