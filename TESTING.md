@@ -24,8 +24,8 @@ Testing is a critical phase in the development of the AI Crop Diagnosis System t
 - **GoogleTrans** – Provides translation services for multi-language support.
 
 ### Database & Storage
-- **SQLite** – Lightweight, serverless database for storing disease info, pesticide data, and chat history.
-- **JSON** – Used for configuration and seeding initial data.
+- **MongoDB Atlas** – Cloud-based NoSQL database for storing user profiles, disease info, pesticide data, and chat history.
+- **JSON** – Used for configuration and seeding initial data into MongoDB.
 
 ---
 
@@ -39,7 +39,7 @@ Testing is a critical phase in the development of the AI Crop Diagnosis System t
 ### System & Manual Testing Tools
 - **Expo Go** – Used for real-time testing on physical Android and iOS devices.
 - **Android Emulator / iOS Simulator** – Used for testing UI responsiveness and layout across different screen sizes.
-- **DB Browser for SQLite** – Used to verify database integrity and check if data (e.g., chat logs, new diseases) is correctly stored.
+- **MongoDB Atlas Compass / UI** – Used to verify database integrity and check if data (e.g., chat logs, new diseases) is correctly stored.
 - **Browser Developer Tools** – Used for debugging network requests when running the app in web mode.
 
 ---
@@ -61,7 +61,7 @@ Focused on ensuring the core logic of the API works in isolation.
 
 ## Integration Testing
 
-Integration testing validates communication between the mobile frontend, the Flask backend, and the SQLite database.
+Integration testing validates communication between the mobile frontend, the Flask backend, and the MongoDB database.
 
 ### API Integration (Postman & Manual)
 - **Diagnosis Flow**:
@@ -114,4 +114,4 @@ System testing validates the complete end-to-end functionality of the AI Crop Di
 ---
 
 ## Conclusion
-The testing process for the AI Crop Diagnosis System has covered critical paths from image capture to disease diagnosis. By utilizing a combination of automated unit tests (Jest, Pytest) and manual system testing (Expo Go, Postman), foundational issues were identified and resolved. The integration of SQLite and Flask has been verified for data consistency. Continued testing will focus on expanding the dataset for higher model accuracy and refining the offline capabilities of the mobile application.
+The testing process for the AI Crop Diagnosis System has covered critical paths from image capture to disease diagnosis. By utilizing a combination of automated unit tests (Jest, Pytest) and manual system testing (Expo Go, Postman), foundational issues were identified and resolved. The integration of MongoDB and Flask has been verified for data consistency. Continued testing will focus on expanding the dataset for higher model accuracy and refining the offline capabilities of the mobile application.

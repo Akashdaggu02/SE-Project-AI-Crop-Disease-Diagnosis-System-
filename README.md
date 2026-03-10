@@ -1,5 +1,9 @@
 # 🌾 AI Crop Diagnosis System
 
+[![Backend CI](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/frontend-ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive, farmer-friendly mobile and web application for crop disease detection, diagnosis, and treatment recommendations with multilingual support.
 
 ## ✨ Features
@@ -7,7 +11,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 ### 🔍 Disease Detection (Epic 1)
 - Upload or capture crop images in real-time
 - Automatic disease detection with confidence scores
-- Support for multiple crops: Tomato, Rice, Wheat, Cotton
+- Support for multiple crops: Grape, Maize, Potato, Rice, Tomato, Cotton
 - Handles different lighting conditions
 - Rejects blurred or low-quality images
 - Fast detection results (< 3 seconds)
@@ -67,11 +71,21 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Multi-device access
 - Secure data storage
 
+## 🏗️ Architecture Diagrams
+
+Visual representations of the system design and workflows:
+
+- [Class Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/Class%20Diagram.jpeg)
+- [Sequence Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/Sequence_Diagram.jpeg)
+- [Use Case Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/Use%20Case%20Diagram.jpeg)
+- [Activity Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/Activity%20Diagram.jpeg)
+- [State Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/State_Diagram.jpeg)
+
 ## 🏗️ Technology Stack
 
 ### Backend
 - **Framework**: Flask (Python)
-- **Database**: SQLite
+- **Database**: MongoDB (Atlas)
 - **ML Framework**: TensorFlow/Keras
 - **Image Processing**: OpenCV
 - **Authentication**: JWT (JSON Web Tokens)
@@ -99,12 +113,24 @@ AI-Crop-Diagnosis/
 │   ├── app.py              # Main Flask application
 │   └── requirements.txt     # Python dependencies
 ├── database/
-│   ├── seed/               # Seed data
-│   ├── db_connection.py    # Database connection
-│   └── crop_diagnosis.db   # SQLite database (auto-created)
+│   ├── seed/               # Seed data for MongoDB
+│   └── mongo_db.py         # MongoDB connection wrapper
 ├── models/                  # Pre-trained H5 models
 ├── frontend-mobile/         # Expo React Native app
+├── UML_Diagrams/            # System architecture diagrams
+├── doc md/                  # Project documentation
 └── uploads/                # Uploaded images (auto-created)
+
+## 📖 Key Documentation
+
+For detailed guides and API specifications, refer to:
+
+- [API Documentation](doc%20md/API_DOCUMENT.md)
+- [Quick Start Guide](QUICK_START.md)
+- [User Manual](doc%20md/USER_DOC.md)
+- [API Testing Guide](API_TESTING_GUIDE.md)
+- [Testing Overview](TESTING.md)
+- [Developer Documentation](doc%20md/devdocs.md)
 ```
 
 ## 🚀 Setup Instructions
@@ -155,7 +181,7 @@ AI-Crop-Diagnosis/
 6. **Initialize database with seed data**
    ```bash
    cd ../database/seed
-   python seed_database.py
+   python seed_database_mongo.py
    cd ../../backend
    ```
 
@@ -196,6 +222,12 @@ AI-Crop-Diagnosis/
      -F "image=@../sample.JPG" \
      -F "crop=tomato"
    ```
+
+## 🌐 Deployment
+
+- **Backend**: Hosted on Render (CI/CD via GitHub Actions)
+- **Web Frontend**: Hosted on Vercel
+- **Database**: MongoDB Atlas (Cloud)
 
 ## 📱 API Endpoints
 
@@ -271,7 +303,7 @@ Get the token by logging in via `/api/user/login`.
 - Kannada (kn) - ಕನ್ನಡ
 - Marathi (mr) - मराठी
 
-## 📊 Database Schema
+## 📊 Database Collections (MongoDB)
 
 ### Users
 - User authentication and profile information
@@ -309,10 +341,8 @@ Edit `backend/config/settings.py` to customize:
 
 ### Database Issues
 ```bash
-# Delete and recreate database
-rm database/crop_diagnosis.db
-cd database/seed
-python seed_database.py
+# Check MongoDB connection in .env
+# Ensure MongoDB Atlas IP Whitelist includes your IP
 ```
 
 ### Module Import Errors

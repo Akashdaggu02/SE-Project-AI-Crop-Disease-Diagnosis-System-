@@ -120,7 +120,7 @@ When you detect disease, you'll get:
 ## 🎯 What You Have Now
 
 ✅ **Complete Backend API** - All 20+ endpoints working
-✅ **Database** - SQLite with 22 diseases, 15 pesticides
+✅ **Database** - MongoDB Atlas with 22 diseases, 15 pesticides
 ✅ **ML Integration** - Your models working perfectly
 ✅ **Multilingual Support** - 6 languages (en, hi, te, ta, kn, mr)
 ✅ **Voice Output** - Text-to-speech in all languages

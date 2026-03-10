@@ -12,9 +12,9 @@ pip install -r requirements.txt
 ### 2️⃣ Initialize Database
 ```bash
 cd ../database/seed
-python seed_database.py
+python seed_database_mongo.py
 ```
-✅ This will create the SQLite database and populate it with diseases and pesticides.
+✅ This will connect to MongoDB Atlas and populate it with diseases and pesticides.
 
 ### 3️⃣ Start the Server
 ```bash
@@ -66,7 +66,7 @@ curl -X POST http://localhost:5000/api/diagnosis/detect ^
 
 ## 📝 Notes
 
-- **Database**: Auto-created at `database/crop_diagnosis.db`
+- **Database**: MongoDB Atlas Connection (Manage in `.env`)
 - **Uploads**: Saved in `backend/uploads/` (auto-created)
 - **Voice Files**: Saved in `backend/voice_outputs/` (auto-created)
 - **Port**: Default is 5000, change in `.env` if needed
@@ -90,10 +90,10 @@ PORT=5001
 
 ### If database errors occur:
 ```bash
-# Delete and recreate
-del database\crop_diagnosis.db
+# Check MongoDB URI in backend/.env
+# Re-run seeding script
 cd database\seed
-python seed_database.py
+python seed_database_mongo.py
 ```
 
 ## ✅ Success Indicators
