@@ -401,7 +401,7 @@ pip install -r backend/requirements.txt
 PORT=5001
 ```
 
-## 📝 Notes
+##  Notes
 
 - The system uses your existing ML models in the `models/` directory
 - No crop classification needed - users select crop type manually
@@ -410,14 +410,14 @@ PORT=5001
 - Chatbot works with fallback responses if no Gemini API key provided
 - Weather integration is optional (works without API key)
 
-## 🎯 Next Steps
+##  Next Steps
 
-1. ✅ Backend is complete and ready to use
-2. 📱 Frontend mobile app needs to be built (React Native/Expo)
-3. 🌐 Web frontend is optional
-4. 🧪 Testing and deployment
+1.  Backend is complete and ready to use
+2.  Frontend mobile app needs to be built (React Native/Expo)
+3.  Web frontend is optional
+4.  Testing and deployment
 
-## 👨‍🌾 For Farmers
+##  For Farmers
 
 This system is designed to be:
 - **Simple**: Just take a photo of your crop
@@ -428,12 +428,13 @@ This system is designed to be:
 - **Local**: Available in your language
 - **Voice-enabled**: Listen instead of reading
 
-## 📄 License
+##  License
 
 This project is for educational and agricultural support purposes.
 
-## 🤝 Support
+##  Support
 
 For issues or questions, please check the API documentation at `/api` endpoint.
+
 
 
