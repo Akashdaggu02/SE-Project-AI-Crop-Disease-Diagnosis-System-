@@ -87,17 +87,17 @@ The system follows a typical Client-Server architecture.
 
 ```mermaid
 graph TD
-    Client[Mobile App (React Native/Expo)]
-    Server[Backend API (Flask)]
-    DB[(MongoDB Atlas)]
-    AI[AI Models (TensorFlow)]
-    Ext[External APIs]
+    Client["Mobile App (React Native/Expo)"]
+    Server["Backend API (Flask)"]
+    DB[("MongoDB Atlas")]
+    AI["AI Models (TensorFlow)"]
+    Ext["External APIs"]
 
     Client -- HTTP/JSON --> Server
-    Server -- SQL --> DB
+    Server -- Queries --> DB
     Server -- Inference --> AI
     Server -- Requests --> Ext
-    Ext --> |Gemini/Weather| Server
+    Ext --> |"Gemini/Weather"| Server
 ```
 
 ### Modules
