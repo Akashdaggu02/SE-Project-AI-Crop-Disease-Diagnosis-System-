@@ -89,10 +89,11 @@ def full_prediction(image_path, crop):
     )
 
     
-    # Safety Check: If the AI is unsure about Rice, call it Healthy to avoid panic.
-    if crop == 'rice' and confidence < 60.0:
+    # Safety Check: If the AI is very unsure about Rice, call it Healthy.
+    # Lowered threshold to 30% to be more inclusive.
+    print(f"DEBUG: Rice prediction confidence: {confidence}%")
+    if crop == 'rice' and confidence < 30.0:
         disease = 'Healthy'
-        pass
 
     # 2. Check Severity (How much yellow/brown is there?)
     severity = estimate_severity(image_path)

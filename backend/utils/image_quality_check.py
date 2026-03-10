@@ -218,6 +218,7 @@ def check_content_validity(image_path: str) -> Dict[str, any]:
         
         
         
+        # Lower threshold to accommodate thin leaves (like rice) or early stage diseases
         min_plant_ratio = 0.15
         
         if plant_ratio < min_plant_ratio:
