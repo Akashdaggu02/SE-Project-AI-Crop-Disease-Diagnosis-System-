@@ -1,8 +1,4 @@
-# 🌾 AI Crop Diagnosis System
-
-[![Backend CI](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/backend-ci.yml)
-[![Frontend CI](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/frontend-ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# 🌾 Agri-AI (Crop Diagnosis System)
 
 A comprehensive, farmer-friendly mobile and web application for crop disease detection, diagnosis, and treatment recommendations with multilingual support.
 
