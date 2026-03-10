@@ -33,7 +33,7 @@ The Dashboard is your central hub for all agricultural activities.
 - **Personalized Greeting**: Welcomes you by name.
 - **Real-time Weather**: Displays current temperature and weather conditions for your specific location. This is critical as many crop diseases are weather-dependent.
 - **Smart Scanning**: A prominent "Scan Your Crop" button provides one-tap access to the AI diagnosis tools.
-- **Supported Crops**: A quick-reference grid showing all crops currently supported by our AI models (Tomato, Rice, Potato, Grape, Maize, Cotton).
+- **Supported Crops**: A quick-reference grid showing all crops currently supported by our AI models (Tomato, Rice, Potato, Grape, Maize, Cotton). *Note: Wheat is supported via the Chatbot.*
 
 ---
 

@@ -11,8 +11,8 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 ### 🔍 Disease Detection (Epic 1)
 - Upload or capture crop images in real-time
 - Automatic disease detection with confidence scores
-- Support for multiple crops: Grape, Maize, Potato, Rice, Tomato, Cotton
-- Handles different lighting conditions
+- Support for multiple crops: Grape, Maize, Potato, Rice, Tomato, Cotton (Image Diagnosis)
+- Extended support for Wheat through Chatbot assistance
 - Rejects blurred or low-quality images
 - Fast detection results (< 3 seconds)
 
@@ -25,7 +25,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Disease severity-based treatment advice
 - Weather-aware prevention tips
 - Warnings for harmful pesticide combinations
-**Smart Crop Health System** allows farmers to quickly detect diseases in crops like Grape, Maize, Potato, Rice, and Tomato using deep learning models via a mobile app and web API.
+**Smart Crop Health System** allows farmers to quickly detect diseases in crops like Grape, Maize, Potato, Rice, Tomato, and Cotton using deep learning models via a mobile app and web API.
 
 ### 💰 Cost Calculation (Epic 3)
 - Input land area for accurate cost estimation
@@ -262,36 +262,62 @@ Authorization: Bearer <your_jwt_token>
 
 Get the token by logging in via `/api/user/login`.
 
-## 🌍 Supported Crops & Diseases
+## 🌍 Supported Crops & Diseases (AI Image Diagnosis)
 
-### Tomato
+The following crops and diseases are supported by our deep learning models for upload and real-time scanning:
+
+### 🍅 Tomato
 - Healthy
 - Bacterial spot
 - Early blight
 - Late blight
 - Leaf Mold
 - Septoria leaf spot
-- Spider mites
+- Spider mites (Two-spotted spider mite)
 - Target Spot
 - Yellow Leaf Curl Virus
 - Tomato mosaic virus
 
-### Rice
-- Healthy
-- Brown Spot
-- Hispa
-- Leaf Blast
+### 🌾 Rice
+- Bacterial leaf blight
+- Brown spot
+- Leaf smut
 
-### Wheat
+### 🥔 Potato
 - Healthy
-- Brown rust
-- Yellow rust
-- Loose Smut
+- Early Blight
+- Late Blight
 
-### Cotton
+### 🍇 Grape
+- Healthy
+- Black Rot
+- ESCA (Black Measles)
+- Leaf Blight (Isariopsis Leaf Spot)
+
+### 🌽 Maize (Corn)
+- Healthy
+- Common Rust
+- Gray Leaf Spot
+- Northern Leaf Blight
+
+### 🌿 Cotton
 - Healthy
 - Bacterial Blight
 - Curl Virus
+
+---
+
+## 💬 Agri-Bot Support (Chatbot ONLY)
+
+The following crops/diseases can be discussed with the **Agri-Bot** if you need treatment advice, even if they aren't currently supported by image scanning:
+
+### 🌾 Wheat
+- Healthy
+- Brown rust (Leaf Rust)
+- Yellow rust (Stripe Rust)
+- Loose Smut
+
+### 🌿 Cotton (Additional Support)
 - Leaf Hopper Jassids
 
 ## 🗣️ Supported Languages
