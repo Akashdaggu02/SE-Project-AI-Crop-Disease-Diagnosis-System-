@@ -111,11 +111,11 @@ AI-Crop-Diagnosis/
 │   ├── services/            # Business logic services
 │   ├── utils/               # Utility functions
 │   ├── app.py              # Main Flask application
+|   ├── models/              # Pre-trained H5 models
 │   └── requirements.txt     # Python dependencies
 ├── database/
 │   ├── seed/               # Seed data for MongoDB
 │   └── mongo_db.py         # MongoDB connection wrapper
-├── models/                  # Pre-trained H5 models
 ├── frontend-mobile/         # Expo React Native app
 ├── UML_Diagrams/            # System architecture diagrams
 ├── doc md/                  # Project documentation
