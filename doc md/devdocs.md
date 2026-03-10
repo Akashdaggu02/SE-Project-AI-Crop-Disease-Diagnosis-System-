@@ -5,10 +5,10 @@
 The **AI Crop Diagnosis System** is a comprehensive solution designed to help farmers detect crop diseases using deep learning. It consists of a mobile application for end-users and a backend server that handles image processing, disease prediction, and data management.
 
 **Key Features:**
-*   **Disease Detection:** Uses TensorFlow/Keras models to identify diseases in crops (Grape, Maize, Potato, Rice, Tomato).
+*   **Disease Detection:** Uses TensorFlow/Keras models to identify diseases in crops: **Grape, Maize, Potato, Rice, Tomato, and Cotton**.
 *   **Multilingual Support:** English, Hindi, Telugu, Tamil, Kannada, Marathi.
-*   **Treatment Recommendations:** Provides chemical and organic treatment options.
-*   **Chatbot:** AI-powered assistant (Gemini) for farming queries.
+*   **Treatment Recommendations:** Provides chemical and organic treatment options based on disease severity.
+*   **Chatbot:** AI-powered assistant (Google Gemini) for farming queries and diagnosis explanation.
 *   **Offline First:** Critical features work without internet.
 
 ---
@@ -42,6 +42,8 @@ The **AI Crop Diagnosis System** is a comprehensive solution designed to help fa
     ```env
     GOOGLE_GEMINI_API_KEY=your_gemini_key
     WEATHER_API_KEY=your_openweather_key
+    MONGODB_URI=mongodb+srv://your_username:password@cluster.mongodb.net/
+    MONGODB_DB_NAME=agri_ai
     SECRET_KEY=dev_secret_key
     PORT=5000
     DEBUG=True
@@ -49,7 +51,8 @@ The **AI Crop Diagnosis System** is a comprehensive solution designed to help fa
 5.  **Initialize Database:**
     ```bash
     cd ../database/seed
-    python seed_database.py
+    # Use the MongoDB seeding script
+    python seed_database_mongo.py
     cd ../../backend
     ```
 6.  **Run the Server:**
@@ -86,7 +89,7 @@ The system follows a typical Client-Server architecture.
 graph TD
     Client[Mobile App (React Native/Expo)]
     Server[Backend API (Flask)]
-    DB[(SQLite Database)]
+    DB[(MongoDB Atlas)]
     AI[AI Models (TensorFlow)]
     Ext[External APIs]
 
@@ -109,8 +112,8 @@ graph TD
     *   `database/`: Database connection and schema interactions.
     *   `ml/`: Model loading and prediction logic.
 *   **Database (`database`):**
-    *   SQLite file (`crop_diagnosis.db`).
-    *   Seeding scripts (`seed/`).
+    *   MongoDB Atlas Cloud Hosting.
+    *   Seeding scripts (`seed/seed_database_mongo.py`).
 
 ---
 
@@ -142,21 +145,21 @@ Base URL: `http://localhost:5000/api`
 
 ---
 
-## 5. Database Schema
+## 5. Database Collections
 
-The system uses **SQLite**.
+The system uses **MongoDB**.
 
-### Key Tables
+### Key Collections
 *   **Users (`users`)**
-    *   `id` (PK), `email`, `password_hash`, `name`, `farm_size`, `preferred_language`.
+    *   `email`, `password_hash`, `name`, `farm_size`, `preferred_language`.
 *   **Diseases (`diseases`)**
-    *   `id` (PK), `name`, `crop_type`, `description`, `symptoms`, `treatment_chemical`, `treatment_organic`.
+    *   `crop`, `disease_name`, `description`, `symptoms`, `prevention_steps`.
 *   **History (`diagnosis_history`)**
-    *   `id` (PK), `user_id` (FK), `disease_id` (FK), `image_path`, `confidence_score`, `timestamp`.
+    *   `user_id`, `crop`, `disease`, `image_path`, `confidence_score`, `timestamp`.
 *   **Pesticides (`pesticides`)**
-    *   `id` (PK), `disease_id` (FK), `name`, `dosage`, `cost_per_unit`.
-*   **Chat Logs (`chat_logs`)**
-    *   `id` (PK), `user_id` (FK), `message`, `response`, `timestamp`.
+    *   `name`, `type`, `target_diseases`, `dosage`, `cost_per_unit`.
+*   **Chat Logs (`chatbot_conversations`)**
+    *   `user_id`, `message`, `response`, `timestamp`.
 
 ---
 
@@ -178,40 +181,58 @@ The system uses **SQLite**.
 
 ---
 
-## 7. Deployment Steps
+---
 
-### Backend
-1.  **Environment:** Ensure `DEBUG=False` in `.env` for production.
-2.  **Server:** Use a production WSGI server like **Gunicorn** or **Waitress**.
-    ```bash
-    # Example using Waitress
-    pip install waitress
-    waitress-serve --port=5000 app:app
-    ```
-3.  **Host:** Deploy to a VM (AWS EC2, DigitalOcean) or a PaaS (Render, Heroku).
+## 7. Deployment Status
 
-### Frontend
-1.  **Build Configuration:** Update `app.json` with correct bundle patterns and version.
-2.  **Build for Android:**
-    ```bash
-    eas build --platform android
-    ```
-3.  **Build for iOS:**
-    ```bash
-    eas build --platform ios
-    ```
-4.  **Publish:** Submit the `.apk` or `.ipa` to the respective app stores or distribute via Expo.
+### Backend (Flask)
+*   **Platform:** Render
+*   **CI/CD:** GitHub Actions (Backend CI)
+*   **Status:** ✅ Deployed and operational.
+
+### Web Frontend (Expo Web)
+*   **Platform:** Vercel
+*   **Project Name:** `agri-ai`
+*   **Build Command:** `cd frontend-mobile && npm install && npx expo export -p web`
+*   **Output Directory:** `frontend-mobile/dist`
+*   **Status:** ✅ Deployed and live.
+
+### Mobile App (Android/iOS)
+*   **Platform:** EAS (Expo Application Services)
+*   **Build Tool:** `eas-cli`
+*   **Android Package:** `com.mohansai1810.smartcrophealth`
+*   **Status:** ✅ Build successful (APK/AAB generated).
 
 ---
 
-## 8. Troubleshooting
+## 8. Build & Deployment Commands
+
+### Building for Web
+```bash
+# From the project root
+# The build is automatically handled by Vercel using vercel.json configuration
+```
+
+### Building for Mobile (EAS)
+```bash
+# Navigate to frontend
+cd frontend-mobile
+
+# Trigger Android APK build
+eas build --platform android --profile preview
+
+# Trigger Production build
+eas build --platform android --profile production
+```
+
+## 9. Troubleshooting
 
 ### Common Issues
 *   **"Network Request Failed" on Mobile:**
     *   **Fix:** Ensure the phone is on the **same Wi-Fi** as the backend. Update the `API_URL` in `frontend-mobile/services/api.ts` to your computer's local IP (e.g., `http://192.168.1.10:5000`). localhost won't work on a physical device.
 
-*   **Database Errors / Missing Tables:**
-    *   **Fix:** Delete `database/crop_diagnosis.db` and re-run `python seed_database.py` inside the `database/seed` folder.
+*   **Database Errors / Connection:**
+    *   **Fix:** Ensure your MongoDB URI is correct in the `.env` file and that your IP address is whitelisted in MongoDB Atlas.
 
 *   **"Module not found" in Frontend:**
     *   **Fix:** Run `npm install` to ensure all dependencies are present. Try `npx expo start -c` to clear the cache.
