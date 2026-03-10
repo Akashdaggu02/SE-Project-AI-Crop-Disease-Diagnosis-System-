@@ -1,4 +1,4 @@
-# 🌾 AI Crop Diagnosis System
+#  AI Crop Diagnosis System
 
 [![Backend CI](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/Akashdaggu02/SE-Project-AI-Crop-Disease-Diagnosis-System-/actions/workflows/frontend-ci.yml)
@@ -6,9 +6,9 @@
 
 A comprehensive, farmer-friendly mobile and web application for crop disease detection, diagnosis, and treatment recommendations with multilingual support.
 
-## ✨ Features
+##  Features
 
-### 🔍 Disease Detection (Epic 1)
+###  Disease Detection (Epic 1)
 - Upload or capture crop images in real-time
 - Automatic disease detection with confidence scores
 - Support for multiple crops: Grape, Maize, Potato, Rice, Tomato, Cotton (Image Diagnosis)
@@ -16,7 +16,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Rejects blurred or low-quality images
 - Fast detection results (< 3 seconds)
 
-### 💊 Diagnosis & Treatment (Epic 2)
+###  Diagnosis & Treatment (Epic 2)
 - Recommended pesticides for detected diseases
 - Correct dosage and application frequency
 - Prevention steps to avoid recurrence
@@ -27,7 +27,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Warnings for harmful pesticide combinations
 **Smart Crop Health System** allows farmers to quickly detect diseases in crops like Grape, Maize, Potato, Rice, Tomato, and Cotton using deep learning models via a mobile app and web API.
 
-### 💰 Cost Calculation (Epic 3)
+###  Cost Calculation (Epic 3)
 - Input land area for accurate cost estimation
 - Automatic pesticide quantity calculation
 - Total treatment cost estimation
@@ -35,7 +35,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Severity-based cost adjustments
 - Downloadable cost summaries for loans/subsidies
 
-### 📊 Disease Progression Tracking (Epic 4)
+###  Disease Progression Tracking (Epic 4)
 - Current severity level detection
 - Early-stage infection alerts
 - Track disease spread over time
@@ -43,7 +43,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Upload follow-up images for comparison
 - Historical disease progression records
 
-### 🌐 Multilingual Support (Epic 5)
+###  Multilingual Support (Epic 5)
 - **Supported Languages**: English, Hindi, Telugu, Tamil, Kannada, Marathi
 - Diagnosis results in local language
 - Pesticide instructions translated
@@ -52,7 +52,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Play/pause/replay voice controls
 - Language preference saved automatically
 
-### 💬 Chatbot Assistance (Epic 6)
+###  Chatbot Assistance (Epic 6)
 - Ask disease-related questions
 - Explanation of diagnosis results
 - Pesticide usage guidance
@@ -61,7 +61,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Voice-based interaction
 - 24/7 availability
 
-### 👤 User Profile & History (Epic 7)
+###  User Profile & History (Epic 7)
 - Personal farmer profile
 - Secure login and authentication
 - Past disease detection history
@@ -71,7 +71,7 @@ A comprehensive, farmer-friendly mobile and web application for crop disease det
 - Multi-device access
 - Secure data storage
 
-## 🏗️ Architecture Diagrams
+##  Architecture Diagrams
 
 Visual representations of the system design and workflows:
 
@@ -81,7 +81,7 @@ Visual representations of the system design and workflows:
 - [Activity Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/Activity%20Diagram.jpeg)
 - [State Diagram](file:///c:/SE%20ROJECT/AI-Crop-Diagnosis/UML_Diagrams/State_Diagram.jpeg)
 
-## 🏗️ Technology Stack
+##  Technology Stack
 
 ### Backend
 - **Framework**: Flask (Python)
@@ -100,7 +100,7 @@ Visual representations of the system design and workflows:
 - **API Client**: Axios
 - **Audio**: Expo AV
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 AI-Crop-Diagnosis/
@@ -121,7 +121,7 @@ AI-Crop-Diagnosis/
 ├── doc md/                  # Project documentation
 └── uploads/                # Uploaded images (auto-created)
 
-## 📖 Key Documentation
+##  Key Documentation
 
 For detailed guides and API specifications, refer to:
 
@@ -133,7 +133,7 @@ For detailed guides and API specifications, refer to:
 - [Developer Documentation](doc%20md/devdocs.md)
 ```
 
-## 🚀 Setup Instructions
+##  Setup Instructions
 
 ### Prerequisites
 - Python 3.8 or higher
@@ -223,13 +223,13 @@ For detailed guides and API specifications, refer to:
      -F "crop=tomato"
    ```
 
-## 🌐 Deployment
+##  Deployment
 
 - **Backend**: Hosted on Render (CI/CD via GitHub Actions)
 - **Web Frontend**: Hosted on Vercel
 - **Database**: MongoDB Atlas (Cloud)
 
-## 📱 API Endpoints
+##  API Endpoints
 
 ### User Management
 - `POST /api/user/register` - Register new user
@@ -252,7 +252,7 @@ For detailed guides and API specifications, refer to:
 - `POST /api/chatbot/message` - Send message to chatbot (requires auth)
 - `GET /api/chatbot/history` - Get chat history (requires auth)
 
-## 🔑 Authentication
+##  Authentication
 
 All protected endpoints require a JWT token in the Authorization header:
 
@@ -262,11 +262,11 @@ Authorization: Bearer <your_jwt_token>
 
 Get the token by logging in via `/api/user/login`.
 
-## 🌍 Supported Crops & Diseases (AI Image Diagnosis)
+##  Supported Crops & Diseases (AI Image Diagnosis)
 
 The following crops and diseases are supported by our deep learning models for upload and real-time scanning:
 
-### 🍅 Tomato
+###  Tomato
 - Healthy
 - Bacterial spot
 - Early blight
@@ -278,49 +278,44 @@ The following crops and diseases are supported by our deep learning models for u
 - Yellow Leaf Curl Virus
 - Tomato mosaic virus
 
-### 🌾 Rice
+###  Rice
 - Bacterial leaf blight
 - Brown spot
 - Leaf smut
 
-### 🥔 Potato
+###  Potato
 - Healthy
 - Early Blight
 - Late Blight
 
-### 🍇 Grape
+###  Grape
 - Healthy
 - Black Rot
 - ESCA (Black Measles)
 - Leaf Blight (Isariopsis Leaf Spot)
 
-### 🌽 Maize (Corn)
+###  Maize (Corn)
 - Healthy
 - Common Rust
 - Gray Leaf Spot
 - Northern Leaf Blight
 
-### 🌿 Cotton
-- Healthy
-- Bacterial Blight
-- Curl Virus
-
 ---
 
-## 💬 Agri-Bot Support (Chatbot ONLY)
+##  Agri-Bot Support (Chatbot ONLY)
 
 The following crops/diseases can be discussed with the **Agri-Bot** if you need treatment advice, even if they aren't currently supported by image scanning:
 
-### 🌾 Wheat
+###  Wheat
 - Healthy
 - Brown rust (Leaf Rust)
 - Yellow rust (Stripe Rust)
 - Loose Smut
 
-### 🌿 Cotton (Additional Support)
+###  Cotton (Additional Support)
 - Leaf Hopper Jassids
 
-## 🗣️ Supported Languages
+##  Supported Languages
 
 - English (en)
 - Hindi (hi) - हिंदी
@@ -328,8 +323,10 @@ The following crops/diseases can be discussed with the **Agri-Bot** if you need 
 - Tamil (ta) - தமிழ்
 - Kannada (kn) - ಕನ್ನಡ
 - Marathi (mr) - मराठी
+- Malayalam (ml) - മലയാളം
+- Tulu (tcy) - ತುಳು
 
-## 📊 Database Collections (MongoDB)
+##  Database Collections (MongoDB)
 
 ### Users
 - User authentication and profile information
@@ -363,7 +360,7 @@ Edit `backend/config/settings.py` to customize:
 - Severity thresholds
 - Supported languages
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Database Issues
 ```bash
